@@ -1,0 +1,40 @@
+useDynLib(switchSelection, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+import(hpa, mnorm, gena)
+
+importFrom("stats", "AIC", "as.formula", "binomial", "coef",
+           "complete.cases", "cov", "glm", "lm", "lm.influence",
+           "logLik", "model.frame", "na.exclude", "na.omit", "na.pass",
+           "optim", "pchisq", "pnorm", "predict", "qnorm", "residuals",
+           "terms", "update", "nobs")
+importFrom("utils", "hasName")
+
+export("mvoprobit")
+
+export("mnprobit")
+
+export("lrtest")
+
+export("loocv", "boot")
+
+export("formula_merge", "formula_split")
+
+export("starsVector")
+
+S3method("predict", "mvoprobit")
+S3method("summary", "mvoprobit")
+S3method("logLik", "mvoprobit")
+S3method("print", "summary.mvoprobit")
+S3method("print", "mvoprobit")
+S3method("nobs", "mvoprobit")
+
+S3method("predict", "mnprobit")
+S3method("summary", "mnprobit")
+S3method("logLik", "mnprobit")
+S3method("print", "summary.mnprobit")
+S3method("print", "mnprobit")
+S3method("nobs", "mnprobit")
+
+S3method("summary", "lrtest")
+S3method("print", "lrtest")
+S3method("print", "summary.lrtest")
