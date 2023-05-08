@@ -1,4 +1,5 @@
 // [[Rcpp::depends(mnorm)]]
+#define ARMA_DONT_USE_OPENMP
 #include <RcppArmadillo.h>
 #include <mnorm.h>
 using namespace Rcpp;
@@ -32,7 +33,6 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
   const int n_obs = control_lnL["n_obs"];
   const int n_coef = control_lnL["n_coef"];
   const int n_coef2 = control_lnL["n_coef2"];
-  const int n_coef_total = control_lnL["n_coef_total"];
   const int n_sigma = control_lnL["n_sigma"];
   
   // Get data
@@ -283,7 +283,7 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
                                    given_x,
                                    n_sim, "default", "NO", true,
                                    is_diff, is_diff, is_diff, is_diff & is2,
-                                   false, R_NilValue, n_cores,
+                                   false, R_NilValue, n_cores,  
                                    R_NilValue);
     arma::vec prob_tmp = prob_list["prob"];
 
@@ -355,10 +355,8 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
         sigma_alt_diff = transform_mat * sigma_alt_diff * transform_mat.t();
         for (int j1 = 0; j1 < (n_alt - 1); j1++)
         {
-          arma::uvec j1_uvec = {(unsigned int)j1};
           for (int j2 = 0; j2 <= j1; j2++)
           {
-            arma::uvec j2_uvec = {(unsigned int)j2};
             if (sigma_alt_diff.at(j1, j2) != 0)
             {
               arma::vec mat_tmp = grad_sigma.tube(j1, j2);

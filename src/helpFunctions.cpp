@@ -1,4 +1,5 @@
 // [[Rcpp::depends(mnorm)]]
+#define ARMA_DONT_USE_OPENMP
 #include <RcppArmadillo.h>
 #include <mnorm.h>
 #include "helpFunctions.h"
@@ -64,7 +65,6 @@ LogicalVector matrixInMatrix(NumericMatrix x,
   const int x_col = x.ncol();
   
   const int y_row = y.nrow();
-  const int y_col = y.ncol();
   
   // Create vector to store indexes
   LogicalVector ind(x_row);

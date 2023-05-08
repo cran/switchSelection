@@ -1,7 +1,7 @@
 #' Multivariate ordered probit model with heteroscedasticity 
 #' and (non-random) sample selection.
 #' @description This function allows to estimate parameters of multivariate
-#' ordered probit model and it's extenstions. 
+#' ordered probit model and it's extensions. 
 #' It is possible to account for heteroscedastic
 #' variances, non-normal marginal distributions of random errors 
 #' (under Gaussian copula) and (non-random) sample selection i.e. when some 
@@ -558,11 +558,11 @@ mvoprobit <- function(formula,
   # Calculate the number of observed equations per group
   n_eq_g <- vector(mode = "numeric", length = n_groups)
   n_eq2_g <- rep(0, n_groups)
-  n_eq_all_g <- n_eq_g
   for (i in 1:n_groups)
   {
     n_eq_g[i] <- sum(groups[i, , drop = FALSE] != -1)
   }
+  n_eq_all_g <- n_eq_g
   if (is2)
   {
     n_eq2_g <- vector(mode = "numeric", length = n_groups)
@@ -702,7 +702,7 @@ mvoprobit <- function(formula,
 
   # Deal with coefficients of continuous equations
   n_coef2 <- vector(mode = "numeric", length = 0)
-  coef2_ind <- list(matrix())
+  coef2_ind <- list(matrix(1))
   if (is2)
   {
     n_coef2 <- vector(mode = "numeric", length = n_eq2)
@@ -1644,7 +1644,7 @@ nobs.mvoprobit <- function(object, ...)
 #' Extract Log-Likelihood from a Fit of the mvoprobit Function. 
 #' @description Extract Log-Likelihood from a model fit
 #' of the \code{\link[switchSelection]{mvoprobit}} function.
-#' @param object object of class "mnprobit"
+#' @param object object of class "mvoprobit"
 #' @param ... further arguments (currently ignored)
 #' @details If \code{estimator == "2step"} in 
 #' \code{\link[switchSelection]{mvoprobit}} then function may return
@@ -2089,10 +2089,10 @@ predict.mvoprobit <- function(object, ...,
         lambda[ind_eq[[i]], 
                ind_eq[[i]], 
                ind_g[[i]]] <- predict(object, 
-                                       newdata = data[ind_g[[i]], ],
-                                       group = groups[i, ],
-                                       type = "lambda",
-                                       control = control)
+                                      newdata = data[ind_g[[i]], ],
+                                      group = groups[i, ],
+                                      type = "lambda",
+                                      control = control)
       }
     }
     return(lambda)

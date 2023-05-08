@@ -1,4 +1,5 @@
 // [[Rcpp::depends(mnorm)]]
+#define ARMA_DONT_USE_OPENMP
 #include <RcppArmadillo.h>
 #include <mnorm.h>
 #include "helpFunctions.h"
@@ -365,9 +366,7 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
       {
         for (int j = 0; j < n_eq2_g.at(i); j++)
         {
-          int j_o = ind_eq(i).at(j) + n_eq_g.at(i);
           int j_adj = j + n_eq_g.at(i);
-          // marginal_par_list_tmp[j + n_eq_g.at(i)] = marginal_par_list[j_o];
           marginal_par_list_tmp[j_adj] = R_NilValue;
           marginal_names_tmp[j_adj] = "normal";
         }
@@ -486,8 +485,6 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
       {
         for (int j2 = 0; j2 < j1; j2++)
         {
-          int j1_o = ind_eq(i).at(j1);
-          int j2_o = ind_eq(i).at(j2);
           arma::vec grad_sigma_tmp = grad_sigma.tube(j1, j2);
           arma::uvec sigma_ind_uvec = {sigma_ind_mat_o.at(j1, j2)};
           jac.submat(ind_g(i), sigma_ind_uvec) = grad_sigma_tmp;
@@ -586,8 +583,6 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
           {
             for (int j2 = 0; j2 < j1; j2++)
             {
-              int j1_o = ind_eq2(i).at(j1);
-              int j2_o = ind_eq2(i).at(j2);
               arma::vec grad_sigma2_prob = grad_sigma.tube(n_eq_g(i) + j1,
                                                            n_eq_g(i) + j2);
               arma::vec grad_sigma2_den = grad_sigma_den.tube(j1, j2);

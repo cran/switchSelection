@@ -95,7 +95,7 @@ mnprobit <- function(formula,
   
   # Get first step model if it has been provided
   model1 <- NULL
-  if (as.character(class(formula)) == "mvoprobit")
+  if (as.character(class(formula)) == "mnprobit")
   {
     model1 <- formula
     formula <- model1$formula
@@ -317,9 +317,9 @@ mnprobit <- function(formula,
   }
   
   # Parameters associated with continuous equations
-  coef2_ind_regime <- matrix()
-  cov2_ind_regime <- matrix()
-  var2_ind_regime <- numeric()
+  coef2_ind_regime <- matrix(1)
+  cov2_ind_regime <- matrix(1)
+  var2_ind_regime <- 1
   if (is2)
   {
     coef2_ind_regime <- matrix(NA, nrow = n_coef2, ncol = n_regimes)
@@ -346,7 +346,6 @@ mnprobit <- function(formula,
                       n_obs = n_obs,
                       n_coef = n_coef,
                       n_coef2 = n_coef2,
-                      n_coef_total = n_coef_total,
                       n_sigma = n_sigma,
                       coef_ind = coef_ind - 1,
                       sigma_ind = sigma_ind - 1,

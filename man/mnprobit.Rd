@@ -152,7 +152,7 @@ parametrization of the multinomial probit model is used:
                 \sigma_{12} & \sigma_{2}^2 & \sigma_{23} & ... & \sigma_{2(J-1)}\\
                 \sigma_{13} & \sigma_{23} & \sigma_{3}^2 & ... & \sigma_{3(J-1)}\\
                 \vdots & \vdots & \vdots & \ddots & \vdots\\
-                \sigma_{1(J-1)} & \sigma_{2(J-1)} & \sigma_{3(J-1)} & ... & \sigma_{J-1}^2\\
+                \sigma_{1(J-1)} & \sigma_{2(J-1)} & \sigma_{3(J-1)} & ... & \sigma_{J-1}^2
                 \end{bmatrix}.}
 Where:
 \itemize{
@@ -354,7 +354,7 @@ data <- data.frame(w1 = w1, w2 = w2, z = z)
 model <- mnprobit(z ~ w1 + w2,
                   data = data)
 summary(model)
-
+\donttest{
 # Compare estimates and true values of parameters
   # regression coefficients
 cbind(true = gamma.1, estimate = model$coef[, 1])
@@ -404,7 +404,8 @@ predict(model, alt = 2, type = "prob", newdata = newdata,
   # E(e | z = 2) / cov(e, u)
   # where joint distribution of 'e' and 'u' determined by
   # Gaussian copula and 'e' is normally distributed
-predict(model, alt = 2, type = "lambda", newdata = newdata)        
+predict(model, alt = 2, type = "lambda", newdata = newdata) 
+}       
 
 \donttest{
 # -------------------------------

@@ -188,7 +188,7 @@ random errors has the following form:
                \rho_{12} & 1 & \rho_{23} & ... & \rho_{2J}\\
                \rho_{13} & \rho_{23} & 1 & ... & \rho_{3J}\\
                \vdots & \vdots & \vdots & \ddots & \vdots\\
-               \rho_{1J} & \rho_{2J} & \rho_{3J} & ... & 1\\
+               \rho_{1J} & \rho_{2J} & \rho_{3J} & ... & 1
                \end{bmatrix},}
 \deqn{z_{ji}=\begin{cases}
                    0\text{, if }z_{ji}^{*}\leq c_{j1}\\
@@ -522,7 +522,7 @@ This argument is used for some internal purposes of the package.
 # Example 1
 # Ordered probit model
 # -------------------------------
-
+\donttest{
 # ---
 # Step 1
 # Simulation of data
@@ -671,6 +671,7 @@ predict(pgn, group = 3, type = "lambda", newdata = newdata)
 
 # Test normality assumption via likelihood ratio test
 lrtest(model, pgn)
+}
  
 \donttest{
 # -------------------------------

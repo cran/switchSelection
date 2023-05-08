@@ -7,7 +7,7 @@
 \method{logLik}{mvoprobit}(object, ...)
 }
 \arguments{
-\item{object}{object of class "mnprobit"}
+\item{object}{object of class "mvoprobit"}
 
 \item{...}{further arguments (currently ignored)}
 }
