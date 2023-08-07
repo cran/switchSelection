@@ -1,3 +1,153 @@
+#' Formulas of mnprobit model.
+#' @description Provides formulas associated with the 
+#' object of class 'mnprobit'.
+#' @param x object of class 'mnprobit'.
+#' @param ... further arguments (currently ignored).
+#' @param type character; 
+#' if \code{type = "formula"} or \code{type = 1} then function returns 
+#' a formulas of multinomial equation. 
+#' If \code{type = "formula2"} or \code{type = 2} then function returns 
+#' a formula of continuous equation.
+#' @return Returns a formula.
+formula.mnprobit <- function(x, ..., type = "formula") 
+{
+  if (length(list(...)) > 0)
+  {
+    warning("Additional arguments passed through ... are ignored.")   
+  }
+  
+  # Validation
+  if (type == 1)
+  {
+    type <- "formula"
+  }
+  if (type == 2)
+  {
+    type <- "formula2"
+  }
+  if (!(type %in% c("formula", "formula2")))
+  {
+    stop("Incorrect 'type' argument.")
+  }
+  
+  # Formula of multinomial equation
+  if (type == "formula")
+  {
+    return (x$formula)
+  }
+  
+  # Formula of continuous equation
+  if (type == "formula2")
+  {
+    if (!x$other$is2)
+    {
+      return (NULL)
+    }
+    return (x$formula2)
+  }
+  
+  return (NULL)
+}
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+#' Formulas of mvoprobit model.
+#' @description Provides formulas associated with the 
+#' object of class 'mvoprobit'.
+#' @param x object of class 'mvoprobit'.
+#' @param ... further arguments (currently ignored).
+#' @param type character; 
+#' if \code{type = "formula"} or \code{type = 1} then function returns formulas 
+#' of ordered equations. 
+#' If \code{type = "formula2"} or \code{type = 2} then function returns formulas 
+#' of continuous equations.
+#' @param eq positive integer representing the index of the equation which
+#' formula should be returned. If \code{NULL} (default) then formulas for each
+#' equation will be returned as a list which \code{i}-th element associated 
+#' with \code{i}-th equation.
+#' @return Returns a formula or a list of formulas depending on \code{eq} value.
+formula.mvoprobit <- function(x, ..., type = "formula", eq = NULL) 
+{
+  if (length(list(...)) > 0)
+  {
+    warning("Additional arguments passed through ... are ignored.")   
+  }
+  
+  # Validation
+  if (type == 1)
+  {
+    type <- "formula"
+  }
+  if (type == 2)
+  {
+    type <- "formula2"
+  }
+  if (type == "formula")
+  {
+    if (!is.null(eq))
+    {
+      if ((eq <= 0) | (eq > x$control_lnL$n_eq))
+      {
+        stop("incorrect 'eq' value.")
+      }
+    }
+  }
+  if (type == "formula2")
+  {
+    if (!x$other$is2)
+    {
+      return (NULL)
+    }
+    if (!is.null(eq))
+    {
+      if ((eq <= 0) | (eq > x$control_lnL$n_eq2))
+      {
+        stop("incorrect 'eq' value.")
+      }
+    }
+  }
+  if (!(type %in% c("formula", "formula2")))
+  {
+    stop("Incorrect 'type' argument.")
+  }
+  
+  # Formula of ordered equation
+  if (type == "formula")
+  {
+    if (x$control_lnL$n_eq == 1)
+    {
+      eq <- 1
+    }
+    if (!is.null(eq))
+    {
+      return(x$formula[[eq]])
+    }
+    return(x$formula)
+  }
+  
+  # Formula of continuous equation
+  if (type == "formula2")
+  {
+    if (x$control_lnL$n_eq2 == 1)
+    {
+      eq <- 1
+    }
+    if (!is.null(eq))
+    {
+      return(x$formula2[[eq]])
+    }
+    return(x$formula2)
+  }
+  
+  return (NULL)
+}
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 #' Merge formulas
 #' @description This function merges all variables of several formulas
 #' into a single formula.

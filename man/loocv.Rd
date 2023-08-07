@@ -7,7 +7,7 @@
 loocv(fit)
 }
 \arguments{
-\item{fit}{an object of class \code{lm}.}
+\item{fit}{object of class \code{lm}.}
 }
 \value{
 This function returns a numeric value representing root mean squared 

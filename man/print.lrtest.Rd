@@ -7,9 +7,9 @@
 \method{print}{lrtest}(x, ...)
 }
 \arguments{
-\item{x}{object of class "lrtest"}
+\item{x}{object of class "lrtest".}
 
-\item{...}{further arguments (currently ignored)}
+\item{...}{further arguments (currently ignored).}
 }
 \value{
 The function returns input argument \code{x}.

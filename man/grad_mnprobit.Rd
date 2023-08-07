@@ -4,7 +4,14 @@
 \alias{grad_mnprobit}
 \title{Gradient of the Log-likelihood Function of Multinomial Probit Model}
 \usage{
-grad_mnprobit(par, control_lnL, out_type = "grad", n_sim = 1000L, n_cores = 1L)
+grad_mnprobit(
+  par,
+  control_lnL,
+  out_type = "grad",
+  n_sim = 1000L,
+  n_cores = 1L,
+  regularization = NULL
+)
 }
 \arguments{
 \item{par}{vector of parameters.}
@@ -17,6 +24,8 @@ grad_mnprobit(par, control_lnL, out_type = "grad", n_sim = 1000L, n_cores = 1L)
 normal probabilities.}
 
 \item{n_cores}{the number of cores to be used.}
+
+\item{regularization}{list of regularization parameters.}
 }
 \description{
 Calculates gradient of the log-likelihood function of 

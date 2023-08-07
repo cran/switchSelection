@@ -1,13 +1,15 @@
 useDynLib(switchSelection, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
-import(hpa, mnorm, gena)
+import(hpa, mnorm, gena, methods)
 
 importFrom("stats", "AIC", "as.formula", "binomial", "coef",
            "complete.cases", "cov", "glm", "lm", "lm.influence",
            "logLik", "model.frame", "na.exclude", "na.omit", "na.pass",
            "optim", "pchisq", "pnorm", "predict", "qnorm", "residuals",
-           "terms", "update", "nobs")
+           "terms", "update", "nobs", "sigma", "fitted", "vcov",
+           "printCoefmat")
 importFrom("utils", "hasName")
+importFrom("methods", "is")
 
 export("mvoprobit")
 
@@ -21,12 +23,19 @@ export("formula_merge", "formula_split")
 
 export("starsVector")
 
+export("delta_method")
+
 S3method("predict", "mvoprobit")
 S3method("summary", "mvoprobit")
 S3method("logLik", "mvoprobit")
 S3method("print", "summary.mvoprobit")
 S3method("print", "mvoprobit")
 S3method("nobs", "mvoprobit")
+S3method("coef", "mvoprobit")
+S3method("vcov", "mvoprobit")
+S3method("formula", "mvoprobit")
+S3method("sigma", "mvoprobit")
+S3method("fitted", "mvoprobit")
 
 S3method("predict", "mnprobit")
 S3method("summary", "mnprobit")
@@ -34,7 +43,15 @@ S3method("logLik", "mnprobit")
 S3method("print", "summary.mnprobit")
 S3method("print", "mnprobit")
 S3method("nobs", "mnprobit")
+S3method("coef", "mnprobit")
+S3method("vcov", "mnprobit")
+S3method("formula", "mnprobit")
+S3method("sigma", "mnprobit")
+S3method("fitted", "mnprobit")
 
 S3method("summary", "lrtest")
 S3method("print", "lrtest")
 S3method("print", "summary.lrtest")
+
+S3method("summary", "delta_method")
+S3method("print", "summary.delta_method")

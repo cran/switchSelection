@@ -44,3 +44,12 @@ starsVector <- function(p_value)
   
   return(stars)
 }
+
+remove_column <- function(mat, name, action = TRUE)
+{
+  if (!action)
+  {
+    return (mat)
+  }
+  mat <- mat[, -which(colnames(mat) == name), drop = FALSE]
+}

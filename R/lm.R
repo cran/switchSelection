@@ -1,11 +1,11 @@
 #' Bootstrap covariance matrix for least squares estimates of linear regression
 #' @description This function calculates bootstrapped covariance matrix
-#' for least squares estimates of linear regression . The estimates should be
+#' for least squares estimates of linear regression. The estimates should be
 #' obtained via \code{lm} function.
-#' @param model an object of class \code{lm}.
+#' @param model object of class \code{lm}.
 #' @param iter positive integer representing the number of bootstrap iterations.
 #' @details Calculations may take long time for high \code{iter} value.
-#' @return This function returns bootstrapped covariance matrix of
+#' @return This function returns a bootstrapped covariance matrix of the
 #' least squares estimator.
 #' @examples 
 #' set.seed(123)
@@ -54,7 +54,7 @@ boot <- function(model, iter = 100)
 #' @description This function calculates root mean squared error (RMSE) for
 #' leave-one-out cross-validation of linear regression estimated via
 #' least squares method.
-#' @param fit an object of class \code{lm}.
+#' @param fit object of class \code{lm}.
 #' @details Fast analytical formula is used.
 #' @return This function returns a numeric value representing root mean squared 
 #' error (RMSE) of leave-one-out cross-validation (LOOCV).

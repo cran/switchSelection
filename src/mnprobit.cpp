@@ -4,7 +4,9 @@
 #include <mnorm.h>
 using namespace Rcpp;
 
+#ifdef _OPENMP
 // [[Rcpp::plugins(openmp)]]
+#endif
 
 //' Log-likelihood Function of Multinomial Probit Model
 //' @description Calculates log-likelihood function of multinomial probit model.
@@ -14,13 +16,15 @@ using namespace Rcpp;
 //' @param n_sim the number of random draws for multivariate 
 //' normal probabilities.
 //' @param n_cores the number of cores to be used. 
+//' @param regularization list of regularization parameters.
 //' @export
 // [[Rcpp::export(rng = false)]]
 NumericMatrix lnL_mnprobit(const arma::vec par,
                            const List control_lnL,
                            const String out_type = "val",
                            const int n_sim = 1000,
-                           const int n_cores = 1)
+                           const int n_cores = 1,
+                           const Nullable<List> regularization = R_NilValue)
 {
   // Determine whether gradient and Jacobian should be estimated
   const bool is_grad = (out_type == "grad");
@@ -59,6 +63,56 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
   const arma::umat coef2_ind_regime = control_lnL["coef2_ind_regime"];
   const arma::umat cov2_ind_regime = control_lnL["cov2_ind_regime"];
   const arma::uvec var2_ind_regime = control_lnL["var2_ind_regime"];
+  
+  // Get parameters of the regularization
+  List regularization1(regularization);
+  arma::uvec ridge_ind;
+  arma::uvec lasso_ind;
+  arma::vec ridge_scale;
+  arma::vec ridge_location;
+  arma::vec lasso_scale;
+  arma::vec lasso_location;
+  bool is_ridge = false;
+  bool is_lasso = false;
+  const bool is_regularization = regularization1.size() > 0;
+  if (is_regularization)
+  {
+    // Ridge parameters
+    is_ridge = regularization1.containsElementNamed("ridge_ind");
+    
+    if (is_ridge)
+    {
+      // Indexes
+      arma::uvec ridge_ind_tmp = regularization1["ridge_ind"];
+      ridge_ind = ridge_ind_tmp;
+      
+      // Scales
+      arma::vec ridge_scale_tmp = regularization1["ridge_scale"];
+      ridge_scale = ridge_scale_tmp;
+      
+      // Locations
+      arma::vec ridge_location_tmp = regularization1["ridge_location"];
+      ridge_location = ridge_location_tmp;
+    }
+    
+    // Lasso parameters
+    is_lasso = regularization1.containsElementNamed("lasso_ind");
+    
+    if (is_lasso)
+    {
+      // Indexes
+      arma::uvec lasso_ind_tmp = regularization1["lasso_ind"];
+      lasso_ind = lasso_ind_tmp;
+      
+      // Scales
+      arma::vec lasso_scale_tmp = regularization1["lasso_scale"];
+      lasso_scale = lasso_scale_tmp;
+      
+      // Locations
+      arma::vec lasso_location_tmp = regularization1["lasso_location"];
+      lasso_location = lasso_location_tmp;
+    }
+  }
   
   // Initialize Jacobian matrix
   arma::mat jac;
@@ -212,26 +266,23 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
       transform_mat2 = transform_mat;
     }
 
-    // Check that covariance matrix is positive
-    if (regime != -1)
-    {
-      if(!sigma2.is_sympd())
-      {
-        if (is_diff)
-        {
-          NumericMatrix out_tmp(n_par, 1);
-          std::fill(out_tmp.begin(), out_tmp.end(), -(1e+100));
-          return(out_tmp);
-        }
-        NumericMatrix out_tmp(1,1);
-        out_tmp(0, 0) = -(1e+100);
-        return(out_tmp);
-      }
-    }
-
     // Construct covariance matrix for alternative
     arma::mat sigma_alt = transform_mat2 * sigma2 * transform_mat2.t();
     NumericMatrix sigma_alt_R = wrap(sigma_alt);
+    
+    // Check that covariance matrix is positive defined
+    if(!sigma_alt.is_sympd())
+    {
+      if (is_diff)
+      {
+        NumericMatrix out_tmp(n_par, 1);
+        std::fill(out_tmp.begin(), out_tmp.end(), -(1e+100));
+        return(out_tmp);
+      }
+      NumericMatrix out_tmp(1,1);
+      out_tmp(0, 0) = -(1e+100);
+      return(out_tmp);
+    }
 
     // Estimate all necessary differences in utilities
     // related to linear indexes
@@ -420,13 +471,56 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
   if (is_grad)
   {
     arma::rowvec grad = sum(jac, 0);
+    // Account for regularization if need
+    if (is_regularization)
+    {
+      // Ridge
+      if (is_ridge)
+      {
+        arma::vec par_ridge = par.elem(ridge_ind) - ridge_location;
+        grad.elem(ridge_ind) = grad.elem(ridge_ind) - 
+          2 * par_ridge % ridge_scale;
+      }
+      if (is_lasso)
+      {
+        arma::vec par_lasso = par.elem(lasso_ind) - lasso_location;
+        grad.elem(lasso_ind) = grad.elem(lasso_ind) - 
+          arma::sign(par_lasso) % lasso_scale;
+      }
+    }
     return(wrap(grad));
   }
 
-  // By default return value of the log-likelihood function
-  NumericMatrix out(1,1);
-  out(0, 0) = sum(lnL);
-  return(out);
+  // Calculate log-likelihood
+  double lnL_val = sum(lnL);
+  
+  // Perform regularization if need
+  if (is_regularization)
+  {
+    if (is_ridge)
+    {
+      arma::vec par_ridge = par.elem(ridge_ind) - ridge_location;
+      lnL_val -= sum(pow(par_ridge, 2) % ridge_scale);
+    }
+    if (is_lasso)
+    {
+      arma::vec par_lasso = par.elem(lasso_ind) - lasso_location;
+      lnL_val -= sum(arma::abs(par_lasso) % lasso_scale);
+    }
+  }
+  
+  // Check validity of the likelihood
+  if(std::isnan(lnL_val))
+  {
+    NumericMatrix out_tmp(1, 1);
+    out_tmp(0, 0) = -(1e+100);
+    return(out_tmp);
+  }
+  NumericMatrix lnL_mat(1, 1);
+  lnL_mat(0, 0) = lnL_val;
+  return(lnL_mat);
+  
+  return(lnL_mat);
 }
 
 //' Gradient of the Log-likelihood Function of Multinomial Probit Model
@@ -438,13 +532,16 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
 //' @param n_sim the number of random draws for multivariate 
 //' normal probabilities.
 //' @param n_cores the number of cores to be used. 
+//' @param regularization list of regularization parameters.
 //' @export
 // [[Rcpp::export(rng = false)]]
 NumericMatrix grad_mnprobit(const arma::vec par,
                             const List control_lnL,
                             const String out_type = "grad",
                             const int n_sim = 1000,
-                            const int n_cores = 1)
+                            const int n_cores = 1,
+                            const Nullable<List> regularization = R_NilValue)
 {
-  return(lnL_mnprobit(par, control_lnL, "grad", n_sim, n_cores));
+  return(lnL_mnprobit(par, control_lnL, "grad", 
+                      n_sim, n_cores, regularization));
 }

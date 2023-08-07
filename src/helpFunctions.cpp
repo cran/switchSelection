@@ -5,7 +5,9 @@
 #include "helpFunctions.h"
 using namespace Rcpp;
 
+#ifdef _OPENMP
 // [[Rcpp::plugins(openmp)]]
+#endif
 
 // [[Rcpp::export(rng = false)]]
 arma::field<arma::vec> findGroup(NumericMatrix z, 

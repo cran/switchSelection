@@ -10,7 +10,8 @@ grad_mvoprobit(
   control_lnL,
   out_type = "grad",
   n_sim = 1000L,
-  n_cores = 1L
+  n_cores = 1L,
+  regularization = NULL
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ grad_mvoprobit(
 normal probabilities.}
 
 \item{n_cores}{the number of cores to be used.}
+
+\item{regularization}{list of regularization parameters.}
 }
 \description{
 Calculates gradient of the log-likelihood function of 

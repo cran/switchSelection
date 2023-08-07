@@ -12,7 +12,7 @@ lrtest(model1, model2)
 \item{model2}{the second model.}
 }
 \value{
-The function returns an object of class \code{lrtest} that is
+The function returns an object of class \code{'lrtest'} that is
 a list with the following elements:
 \itemize{
 \item \code{n1} - the number of observations in the first model.
@@ -23,7 +23,7 @@ a list with the following elements:
 \item \code{df2} - the number of parameters in the second model.
 \item \code{restrictions} - the number of restrictions in the nested model.
 \item \code{value} - chi-squared test statistic value.
-\item \code{p_value} - p-value of chi-squared test.
+\item \code{p_value} - p-value of the chi-squared test.
 }
 }
 \description{

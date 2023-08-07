@@ -17,9 +17,10 @@ matrixInMatrix <- function(x, y) {
 #' @param n_sim the number of random draws for multivariate 
 #' normal probabilities.
 #' @param n_cores the number of cores to be used. 
+#' @param regularization list of regularization parameters.
 #' @export
-lnL_mnprobit <- function(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L) {
-    .Call(`_switchSelection_lnL_mnprobit`, par, control_lnL, out_type, n_sim, n_cores)
+lnL_mnprobit <- function(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L, regularization = NULL) {
+    .Call(`_switchSelection_lnL_mnprobit`, par, control_lnL, out_type, n_sim, n_cores, regularization)
 }
 
 #' Gradient of the Log-likelihood Function of Multinomial Probit Model
@@ -31,9 +32,10 @@ lnL_mnprobit <- function(par, control_lnL, out_type = "val", n_sim = 1000L, n_co
 #' @param n_sim the number of random draws for multivariate 
 #' normal probabilities.
 #' @param n_cores the number of cores to be used. 
+#' @param regularization list of regularization parameters.
 #' @export
-grad_mnprobit <- function(par, control_lnL, out_type = "grad", n_sim = 1000L, n_cores = 1L) {
-    .Call(`_switchSelection_grad_mnprobit`, par, control_lnL, out_type, n_sim, n_cores)
+grad_mnprobit <- function(par, control_lnL, out_type = "grad", n_sim = 1000L, n_cores = 1L, regularization = NULL) {
+    .Call(`_switchSelection_grad_mnprobit`, par, control_lnL, out_type, n_sim, n_cores, regularization)
 }
 
 #' Log-likelihood Function of Multivariate Ordered Probit Model
@@ -45,9 +47,10 @@ grad_mnprobit <- function(par, control_lnL, out_type = "grad", n_sim = 1000L, n_
 #' @param n_sim the number of random draws for multivariate 
 #' normal probabilities.
 #' @param n_cores the number of cores to be used. 
+#' @param regularization list of regularization parameters.
 #' @export
-lnL_mvoprobit <- function(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L) {
-    .Call(`_switchSelection_lnL_mvoprobit`, par, control_lnL, out_type, n_sim, n_cores)
+lnL_mvoprobit <- function(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L, regularization = NULL) {
+    .Call(`_switchSelection_lnL_mvoprobit`, par, control_lnL, out_type, n_sim, n_cores, regularization)
 }
 
 #' Gradient of the Log-likelihood Function of Multivariate Ordered
@@ -60,8 +63,9 @@ lnL_mvoprobit <- function(par, control_lnL, out_type = "val", n_sim = 1000L, n_c
 #' @param n_sim the number of random draws for multivariate 
 #' normal probabilities.
 #' @param n_cores the number of cores to be used. 
+#' @param regularization list of regularization parameters.
 #' @export
-grad_mvoprobit <- function(par, control_lnL, out_type = "grad", n_sim = 1000L, n_cores = 1L) {
-    .Call(`_switchSelection_grad_mvoprobit`, par, control_lnL, out_type, n_sim, n_cores)
+grad_mvoprobit <- function(par, control_lnL, out_type = "grad", n_sim = 1000L, n_cores = 1L, regularization = NULL) {
+    .Call(`_switchSelection_grad_mvoprobit`, par, control_lnL, out_type, n_sim, n_cores, regularization)
 }
 

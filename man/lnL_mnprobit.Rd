@@ -4,7 +4,14 @@
 \alias{lnL_mnprobit}
 \title{Log-likelihood Function of Multinomial Probit Model}
 \usage{
-lnL_mnprobit(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L)
+lnL_mnprobit(
+  par,
+  control_lnL,
+  out_type = "val",
+  n_sim = 1000L,
+  n_cores = 1L,
+  regularization = NULL
+)
 }
 \arguments{
 \item{par}{vector of parameters.}
@@ -17,6 +24,8 @@ lnL_mnprobit(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L)
 normal probabilities.}
 
 \item{n_cores}{the number of cores to be used.}
+
+\item{regularization}{list of regularization parameters.}
 }
 \description{
 Calculates log-likelihood function of multinomial probit model.

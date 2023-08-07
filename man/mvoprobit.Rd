@@ -20,16 +20,17 @@ mvoprobit(
   degrees = NULL,
   n_sim = 1000,
   n_cores = 1,
-  control = NULL
+  control = NULL,
+  regularization = NULL
 )
 }
 \arguments{
 \item{formula}{list which i-th element is an object of class "formula"
-describing the form of linear index for the i-th ordered equation.
+describing the form of the linear index for the i-th ordered equation.
 Mean and variance equations should be separated by '|' symbol.}
 
 \item{formula2}{list which i-th element is an object of class "formula"
-describing the form of linear index for the i-th continuous equation.}
+describing the form of the linear index for the i-th continuous equation.}
 
 \item{data}{data frame containing the variables in the model.}
 
@@ -58,15 +59,15 @@ If \code{opt_type = "pso"} then \code{\link[gena]{pso}} will be used
 i.e. particle swarm optimization.}
 
 \item{opt_args}{a list of input arguments for the optimization function
-selected via \code{opt_type} argument.}
+selected via \code{opt_type} argument. See 'Details' for information.}
 
 \item{start}{numeric vector of initial parameters' values. It will be used
 as a starting point for optimization purposes. It is also possible to
-provide an object of class \code{'mvoprobit'} then it's \code{'par'} 
+provide an object of class \code{'mvoprobit'} then its \code{'par'} 
 element will be used as a starting point.}
 
 \item{estimator}{character determining estimation method.
-If \code{estimator = "ml"} then maximum-likelihood will be used.
+If \code{estimator = "ml"} then maximum-likelihood method will be used.
 If \code{estimator = "2step"} then two-step estimation procedure similar
 to Heckman's method will be applied.}
 
@@ -79,11 +80,11 @@ estimator will be applied.}
 
 \item{degrees}{vector of non-negative integers such that \code{degrees[i]}
 represents degree of polynomial which elements are selectivity correction
-terms associated with the \code{i}-th ordered equation. See Details for
+terms associated with the \code{i}-th ordered equation. See 'Details' for
 additional information.}
 
 \item{n_sim}{integer representing the number of GHK draws when there are
-more then 3 ordered equations. Otherwise alternative (much more efficient) 
+more than 3 ordered equations. Otherwise alternative (much more efficient) 
 algorithms will be used to calculate multivariate normal probabilities.}
 
 \item{n_cores}{positive integer representing the number of CPU cores used for 
@@ -92,6 +93,20 @@ the number of available physical cores especially when the system of
 ordered equations has 2 or 3 equations.}
 
 \item{control}{a list of control parameters. See 'Details'.}
+
+\item{regularization}{a list of control parameters for regularization.
+Element \code{ridge_ind} is a vector of indexes of parameters subject to 
+regularization according to quadratic (ridge) penalty function.
+These indexes correspond to parameters from \code{par} output element. 
+Set \code{show_ind} argument of
+\code{\link[switchSelection]{summary.mvoprobit}} to \code{TRUE} to see
+these indexes.
+Element \code{ridge_scale} is a numeric vector of weights of ridge
+penalty function. 
+Element \code{ridge_location} is a numeric vector of values to be subtracted
+from parameters before they pass into penalty function.
+Elements \code{lasso_ind}, \code{lasso_scale} and \code{lasso_location} are
+the same but for the lasso penalty term.}
 }
 \value{
 This function returns an object of class 'mvoprobit' which is a
@@ -111,9 +126,11 @@ Wherein i-th row of this matrix contains estimates of regression
 coefficients corresponding to the i-th regime of j-th continuous variable.
 \item \code{sigma} - estimate of the covariance matrix of random errors
 of ordered equations i.e. \eqn{\widehat{\Sigma}}.
+\item \code{var2} - estimates of the variances of random errors
+of continuous equations.
 \item \code{sigma2} - estimates of covariances between random errors of
 continuous equations.
-\item \code{cov_y} - list which j-th element \code{cov_y[[j]]} contains
+\item \code{cov2} - list which j-th element \code{cov_y[[j]]} contains
 estimates of covariances between random errors of j-th continuous
 equation in different regimes.
 \item \code{cuts} - list which j-the element \code{cuts[[j]]} is a vector
@@ -142,6 +159,7 @@ dataframe containing regressors and dependent variable of the j-th equation.
 without missing values.
 \item \code{cov} - estimate of the covariance matrix of parameters'
 estimator.
+\item \code{cov_type} - type of the asymptotic covariance matrix estimator.
 \item \code{cov_2step} - estimate of the covariance matrix of parameters'
 estimator associated with the second step parameters i.e.
 when \code{estimator = "2step"}.
@@ -161,11 +179,15 @@ of equations. Please, see 'Details' section above for more information.
 \item \code{model1} - first step estimation results when
 \code{estimator = "2step"}.
 \item \code{coef_lambda} - estimates of coefficients of lambdas.
+\item \code{other} - list of additional variables not intended for the user.
 }
+
+It is highly recommended to get estimates via
+\code{\link[switchSelection]{coef.mvoprobit}} function.
 }
 \description{
 This function allows to estimate parameters of multivariate
-ordered probit model and it's extenstions. 
+ordered probit model and its extensions. 
 It is possible to account for heteroscedastic
 variances, non-normal marginal distributions of random errors 
 (under Gaussian copula) and (non-random) sample selection i.e. when some 
@@ -179,7 +201,7 @@ In this case both maximum-likelihood and two-step
 \details{
 Multivariate ordered probit model with heteroscedastic
 random errors has the following form:
-\deqn{z_{ji}^{*} = w_{ji}\gamma_{j} + \sigma_{ji}u_{ji}} 
+\deqn{z_{ji}^{*} = w_{ji}\gamma_{j} + \sigma_{ji}u_{ji},} 
 \deqn{\sigma_{ji} = \exp(w_{ji}^{*}\gamma_{j}^{*}), \quad 
       u_{i}\sim N\left(\begin{bmatrix}0\\ \vdots\\ 0\end{bmatrix}, 
                        \Sigma\right), i.i.d.,}
@@ -209,7 +231,7 @@ observations then \eqn{n} equals to \code{nrow(data)}.
 dependent variable.
 \item \eqn{z_{ji}} - observable (ordered) value of the \code{j}-th
 dependent variable.
-\item \eqn{m_{j}} - the number of categories of
+\item \eqn{(m_{j} + 1)} - the number of categories of
 \eqn{z_{ji}\in\{0,1,...,m_{j}\}}.
 \item \eqn{c_{jk}} - \eqn{k}-th cut of the \code{j}-th dependent variable.
 \item \eqn{w_{ji}} - regressors of the \eqn{j}-th mean equation 
@@ -218,10 +240,10 @@ which should be described in \code{formula[[j]]}.
 mean equation.
 \item \eqn{w_{ji}\gamma_{j}} - linear index of the \eqn{j}-th mean equation.
 \item \eqn{u_{i}} - multivariate normal random vector which elements are
-                    standard normal variates.
+                    standard normal random variables.
 \item \eqn{\Sigma} - correlation matrix of \eqn{u_{i}} i.e. 
 \eqn{\Sigma_{t_{1}t_{2}}=\rho_{\min(t_{1},t_{2}),\max(t_{1}t_{2})}=
-     \text{corr}\left(u_{it_{1}}, u_{it_{1}}\right)}.
+     \text{corr}\left(u_{it_{1}}, u_{it_{2}}\right)}.
 \item \eqn{\sigma_{ji}} - heteroscedastic standard deviation.
 \item \eqn{\sigma_{ji}u_{ji}} - heteroscedastic random errors.
 \item \eqn{w_{ji}^{*}} - regressors of the \eqn{j}-th variance equation 
@@ -232,16 +254,16 @@ variance equation.
 variance equation.
 }
 Parameters of this model are estimated via maximum-likelihood method
-using numeric optimization technic provided through \code{opt_type} 
+using numeric optimization approach provided through \code{opt_type} 
 argument. The type of covariance matrix estimator may be provided
 through \code{cov_type} argument.
 
 To account for (non-random) sample selection unobservable values of 
 dependent variables
-should be coded as -1 (instead of 0 or 1). For example if \eqn{z_{1}} is
+should be coded as -1. For example if \eqn{z_{1}} is a
 binary variable for employment status (0 - unemployed, 1 - employed) and
 \eqn{z_{2}} is ordered variable (ranging from 0 to 2) for job satisfaction
-(0 - unsatisfied, 1- satisfied, 2 - higly satisfied) 
+(0 - unsatisfied, 1- satisfied, 2 - highly satisfied) 
 then \eqn{z_{2}} is observable
 only when \eqn{z_{1}} equals 1 since job satisfaction observable only for
 working individuals. Consequently \eqn{z_{2}} should be equal 
@@ -437,13 +459,13 @@ where:
 \lambda_{ji}^{(1)}=
 \begin{cases}
 0\text{, if }z_{ji} = 0\\
--\frac{\partial P_{i}^{*}}{\partial a_{ji}}\text{, otherwise }
+-\frac{\partial \ln P_{i}^{*}}{\partial a_{ji}}\text{, otherwise }
 \end{cases},
 \qquad
 \lambda_{ji}^{(2)}=
 \begin{cases}
 0\text{, if }z_{ji} = m_{j}\\
--\frac{\partial P_{i}^{*}}{\partial b_{ji}}\text{, otherwise }
+-\frac{\partial \ln P_{i}^{*}}{\partial b_{ji}}\text{, otherwise }
 \end{cases},
 }
 \deqn{
@@ -488,7 +510,7 @@ where \eqn{\tau_{jt}} are polynomial coefficients.
 Polynomial order \eqn{d_{j}} is determined by \code{degrees[j]} value.
 If there are more than one regime then \code{degrees} should be a matrix
 such that \code{degrees[r, j]} is \eqn{d_{j}} corresponding to the 
-\eqn{r}-th regime. However if there are more then one regime and 
+\eqn{r}-th regime. However if there are more than one regime and 
 \code{degrees} is a vector it will be transformed into a matrix which rows
 are the same as \code{degrees}.
 
@@ -508,6 +530,21 @@ of \eqn{u} (random errors of ordered equations) and
 \eqn{\varepsilon} (random errors of continuous equations) will be
 determined by Gaussian copula.
 
+Optimization always starts with \code{\link[stats]{optim}}. If
+\code{opt_type = "gena"} or \code{opt_type = "pso"} then 
+\code{\link[gena]{gena}} or \code{\link[gena]{pso}} is used
+to proceed optimization starting
+from initial point provided by \code{optim}. Manual arguments to 
+\code{\link[stats]{optim}}
+should be provided in a form of a list through \code{opt_args$optim}.
+Similarly \code{opt_args$gena} and \code{opt_args$pso} provide manual
+arguments to \code{\link[gena]{gena}} and \code{\link[gena]{pso}}.
+For example to provide Nelder-Mead optimizer to 
+\code{\link[stats]{optim}} and
+restrict the number of genetic algorithm iterations to \eqn{10} make
+\code{opt_args = list(optim = list(method = "Nelder-Mead"), 
+gena = list(maxiter = 10))}.
+
 For more information on multivariate sample selection and endogenous
 switching models see 
 E. Kossova and B. Potanin (2018),
@@ -518,15 +555,71 @@ Currently \code{control} has no input arguments intended for the users.
 This argument is used for some internal purposes of the package.
 }
 \examples{
+\donttest{
 # -------------------------------
-# Example 1
+# CPS data example
+# -------------------------------
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Upload data
+data(cps)
+
+# Prepare ordered variable for education
+cps$educ <- NA
+cps$educ[cps$basic == 1] <- 0
+cps$educ[cps$bachelor == 1] <- 1
+cps$educ[cps$master == 1] <- 2
+
+# Labor supply (probit) model
+f_work <- work ~ age + I(age ^ 2) + bachelor + master + health + 
+                 slwage + nchild
+model1 <- mvoprobit(f_work, data = cps)
+summary(model1)
+    
+# Education choice (ordered probit) model
+f_educ <- educ ~ age + I(age ^ 2) + sbachelor + smaster
+model2 <- mvoprobit(f_educ, data = cps)
+summary(model2)   
+
+# Labor supply with endogenous education 
+# treatment (recursive or hierarchical ordered probit) model
+model3 <- mvoprobit(list(f_work, f_educ), data = cps)  
+summary(model3)         
+
+# Sample selection (on employment) Heckman's model
+f_lwage <- lwage ~ age + I(age ^ 2) + bachelor + master + health
+cps$lwage[cps$work == 0] <- Inf
+model4 <- mvoprobit(f_work, f_lwage, data = cps)
+summary(model4)
+
+# Endogenous education treatment with non-random sample selection
+model5 <- mvoprobit(list(f_work, f_educ), f_lwage, data = cps)
+summary(model5)
+ 
+# Endogenous switching model with non-random sample selection
+groups <- cbind(c(1, 1, 1, 0, 0, 0),
+                c(0, 1, 2, 0, 1, 2))
+groups2 <- matrix(c(0, 1, 2, -1, -1, -1), ncol = 1)
+f_lwage2 <- lwage ~ age + I(age ^ 2) + health
+model6 <- mvoprobit(list(f_work, f_educ), f_lwage2,
+                    groups = groups, groups2 = groups2,
+                    data = cps)
+summary(model6)
+}
+ 
+# -------------------------------
+# Simulated data example 1
 # Ordered probit model
 # -------------------------------
-\donttest{
 # ---
 # Step 1
 # Simulation of data
 # ---
+
+# Load required package
+library("mnorm")
 
 # Set seed for reproducibility
 set.seed(123)
@@ -572,7 +665,7 @@ data <- data.frame(w1 = w1, w2 = w2, z = z)
 model <- mvoprobit(z ~ w1 + w2,
                    data = data)
 summary(model)
-
+\donttest{
 # Compare estimates and true values of parameters
   # regression coefficients
 cbind(true = gamma, estimate = model$coef[[1]])
@@ -675,10 +768,13 @@ lrtest(model, pgn)
  
 \donttest{
 # -------------------------------
-# Example 2
+# Simulated data example 2
 # Heteroscedastic ordered 
 # probit model
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1
@@ -792,11 +888,14 @@ predict(model, group = 2, type = "prob", newdata = newdata,
 
 \donttest{
 # -------------------------------
-# Example 3
+# Simulated data example 3
 # Bivariate ordered probit model
 # with heteroscedastic second
 # equation
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1
@@ -986,10 +1085,13 @@ summary(model)
 
 \donttest{
 # -------------------------------
-# Example 4
+# Simulated data example 4
 # Heckman model with
 # ordered selection mechanism
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1
@@ -1070,9 +1172,9 @@ cbind(true = cuts, estimate = model$cuts[[1]])
   # regression coefficients of continuous equation
 cbind(true = beta, estimate = as.numeric(model$coef2[[1]]))  
   # variance
-cbind(true = var.y, estimate = as.numeric(model$var_y[[1]]))
+cbind(true = var.y, estimate = as.numeric(model$var2[[1]]))
   # covariance
-cbind(true = rho * sd.y, estimate = as.numeric(model$cov_y[[1]]))
+cbind(true = rho * sd.y, estimate = as.numeric(model$cov2[[1]]))
 
 # ---
 # Step 3
@@ -1177,11 +1279,14 @@ summary(model_Newey)
 
 \donttest{
 # -------------------------------
-# Example 5
+# Simulated data example 5
 # Endogenous switching model
 # with heteroscedastic
 # ordered selection mechanism
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1
@@ -1202,17 +1307,17 @@ w3 <- runif(n = n, min = -1, max = 1)
 # Random errors
 rho_0 <- -0.8
 rho_1 <- -0.7
-var_y_0 <- 0.9
-var_y_1 <- 1
-sd_y_0 <- sqrt(var_y_0)
-sd_y_1 <- sqrt(var_y_1)
+var2_0 <- 0.9
+var2_1 <- 1
+sd_y_0 <- sqrt(var2_0)
+sd_y_1 <- sqrt(var2_1)
 cor_y_01 <- 0.7
-cov_y_01 <- sd_y_0 * sd_y_1 * cor_y_01
-cov_y_z_0 <- rho_0 * sd_y_0
-cov_y_z_1 <- rho_1 * sd_y_1
-sigma <- matrix(c(1,         cov_y_z_0, cov_y_z_1,
-                  cov_y_z_0, var_y_0,   cov_y_01,
-                  cov_y_z_1, cov_y_01,  var_y_1),
+cov2_01 <- sd_y_0 * sd_y_1 * cor_y_01
+cov2_z_0 <- rho_0 * sd_y_0
+cov2_z_1 <- rho_1 * sd_y_1
+sigma <- matrix(c(1,        cov2_z_0, cov2_z_1,
+                  cov2_z_0, var2_0,   cov2_01,
+                  cov2_z_1, cov2_01,  var2_1),
                 nrow = 3)
 errors <- mnorm::rmnorm(n = n, mean = c(0, 0, 0), sigma = sigma)
 u <- errors[, 1]
@@ -1292,9 +1397,9 @@ cbind(true = cuts, estimate = model$cuts[[1]])
 cbind(true = beta_0, estimate = model$coef2[[1]][1, ]) 
 cbind(true = beta_1, estimate = model$coef2[[1]][2, ])
   # variances
-cbind(true = c(var_y_0, var_y_1), estimate = model$var_y[[1]]) 
+cbind(true = c(var2_0, var2_1), estimate = model$var2[[1]]) 
   # covariances
-cbind(true = c(cov_y_z_0, cov_y_z_1), estimate = model$cov_y[[1]])
+cbind(true = c(cov2_z_0, cov2_z_1), estimate = model$cov2[[1]])
 
 # ---
 # Step 3
@@ -1321,11 +1426,14 @@ predict(model, group = 0, group2 = 1, newdata = newdata)
 
 \donttest{
 # -------------------------------
-# Example 6
+# Simulated data example 6
 # Endogenous switching model with
 # multivariate heteroscedastic
 # ordered selection mechanism
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1
@@ -1350,20 +1458,20 @@ rho_y0_z1 <- 0.6
 rho_y0_z2 <- 0.7
 rho_y1_z1 <- 0.65
 rho_y1_z2 <- 0.75
-var_y0 <- 0.9
-var_y1 <- 1
-sd_y0 <- sqrt(var_y0)
-sd_y1 <- sqrt(var_y1)
+var20 <- 0.9
+var21 <- 1
+sd_y0 <- sqrt(var20)
+sd_y1 <- sqrt(var21)
 cor_y01 <- 0.7
-cov_y01 <- sd_y0 * sd_y1 * cor_y01
-cov_y0_z1 <- rho_y0_z1 * sd_y0
-cov_y1_z1 <- rho_y1_z1 * sd_y1
-cov_y0_z2 <- rho_y0_z2 * sd_y0
-cov_y1_z2 <- rho_y1_z2 * sd_y1
-sigma <- matrix(c(1,         rho_z1_z2, cov_y0_z1, cov_y1_z1, 
-                  rho_z1_z2, 1,         cov_y0_z2, cov_y1_z2,
-                  cov_y0_z1, cov_y0_z2, var_y0,    cov_y01,
-                  cov_y1_z1, cov_y1_z2, cov_y01,   var_y1),
+cov201 <- sd_y0 * sd_y1 * cor_y01
+cov20_z1 <- rho_y0_z1 * sd_y0
+cov21_z1 <- rho_y1_z1 * sd_y1
+cov20_z2 <- rho_y0_z2 * sd_y0
+cov21_z2 <- rho_y1_z2 * sd_y1
+sigma <- matrix(c(1,         rho_z1_z2,  cov20_z1,  cov21_z1, 
+                  rho_z1_z2, 1,          cov20_z2,  cov21_z2,
+                  cov20_z1,  cov20_z2,   var20,     cov201,
+                  cov21_z1,  cov21_z2,   cov201,    var21),
                 nrow = 4)
 errors <- mnorm::rmnorm(n = n, mean = c(0, 0, 0, 0), sigma = sigma)
 u1 <- errors[, 1]
@@ -1461,10 +1569,10 @@ cbind(true = cuts2, estimate = model$cuts[[2]])
 cbind(true = beta0, estimate = model$coef2[[1]][1, ]) 
 cbind(true = beta1, estimate = model$coef2[[1]][2, ])
   # variances
-cbind(true = c(var_y0, var_y1), estimate = model$var_y[[1]]) 
+cbind(true = c(var20, var21), estimate = model$var2[[1]]) 
   # covariances
-cbind(true = c(cov_y0_z1, cov_y0_z2), estimate = model$cov_y[[1]][1, ])
-cbind(true = c(cov_y1_z1, cov_y1_z2), estimate = model$cov_y[[1]][2, ])
+cbind(true = c(cov20_z1, cov20_z2), estimate = model$cov2[[1]][1, ])
+cbind(true = c(cov21_z1, cov21_z2), estimate = model$cov2[[1]][2, ])
 
 # ---
 # Step 3
@@ -1558,12 +1666,15 @@ print(tbl)
 
 \donttest{
 # -------------------------------
-# Example 7
+# Simulated data example 7
 # Endogenous multivariate
 # switching model with
 # multivariate heteroscedastic
 # ordered selection mechanism
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1
@@ -1584,13 +1695,13 @@ w4 <- runif(n = n, min = -1, max = 1)
 w5 <- runif(n = n, min = -1, max = 1)
 
 # Random errors
-var_y0 <- 0.9
-var_y1 <- 1
+var20 <- 0.9
+var21 <- 1
 var_g0 <- 1.1
 var_g1 <- 1.2
 var_g2 <- 1.3
 A <- rWishart(1, 7, diag(7))[, , 1]
-B <- diag(sqrt(c(1, 1, var_y0, var_y1, 
+B <- diag(sqrt(c(1, 1, var20, var21, 
                  var_g0, var_g1, var_g2)))
 sigma <-  B  \%*\% cov2cor(A) \%*\% B
 errors <- mnorm::rmnorm(n = n, mean = rep(0, nrow(sigma)), sigma = sigma)
@@ -1728,16 +1839,16 @@ cbind(true = beta0_g, estimate = model$coef2[[2]][1, ])
 cbind(true = beta1_g, estimate = model$coef2[[2]][2, ])
 cbind(true = beta2_g, estimate = model$coef2[[2]][3, ])
   # variances
-cbind(true = c(var_y0, var_y1), estimate = model$var_y[[1]]) 
-cbind(true = c(var_g0, var_g1, var_g2), estimate = model$var_y[[2]]) 
+cbind(true = c(var20, var21), estimate = model$var2[[1]]) 
+cbind(true = c(var_g0, var_g1, var_g2), estimate = model$var2[[2]]) 
   # correlation between ordered equations
 cbind(true = c(sigma[1, 2]), estimate = model$sigma[1, 2])
   # covariances between continious and ordered equations
-cbind(true = sigma[1:2, 3], estimate = model$cov_y[[1]][1, ])
-cbind(true = sigma[1:2, 4], estimate = model$cov_y[[1]][2, ])
-cbind(true = sigma[1:2, 5], estimate = model$cov_y[[2]][1, ])
-cbind(true = sigma[1:2, 6], estimate = model$cov_y[[2]][2, ])
-cbind(true = sigma[1:2, 7], estimate = model$cov_y[[2]][3, ])
+cbind(true = sigma[1:2, 3], estimate = model$cov2[[1]][1, ])
+cbind(true = sigma[1:2, 4], estimate = model$cov2[[1]][2, ])
+cbind(true = sigma[1:2, 5], estimate = model$cov2[[2]][1, ])
+cbind(true = sigma[1:2, 6], estimate = model$cov2[[2]][2, ])
+cbind(true = sigma[1:2, 7], estimate = model$cov2[[2]][3, ])
   # covariances between continuous equations
 cbind(true = c(sigma[4, 7], sigma[3, 5], sigma[4, 6]), 
       estimate = model$sigma2[[1]]) 

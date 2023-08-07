@@ -4,7 +4,14 @@
 \alias{lnL_mvoprobit}
 \title{Log-likelihood Function of Multivariate Ordered Probit Model}
 \usage{
-lnL_mvoprobit(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L)
+lnL_mvoprobit(
+  par,
+  control_lnL,
+  out_type = "val",
+  n_sim = 1000L,
+  n_cores = 1L,
+  regularization = NULL
+)
 }
 \arguments{
 \item{par}{vector of parameters.}
@@ -17,6 +24,8 @@ lnL_mvoprobit(par, control_lnL, out_type = "val", n_sim = 1000L, n_cores = 1L)
 normal probabilities.}
 
 \item{n_cores}{the number of cores to be used.}
+
+\item{regularization}{list of regularization parameters.}
 }
 \description{
 Calculates log-likelihood function of multivariate ordered

@@ -7,17 +7,17 @@
 boot(model, iter = 100)
 }
 \arguments{
-\item{model}{an object of class \code{lm}.}
+\item{model}{object of class \code{lm}.}
 
 \item{iter}{positive integer representing the number of bootstrap iterations.}
 }
 \value{
-This function returns bootstrapped covariance matrix of
+This function returns a bootstrapped covariance matrix of the
 least squares estimator.
 }
 \description{
 This function calculates bootstrapped covariance matrix
-for least squares estimates of linear regression . The estimates should be
+for least squares estimates of linear regression. The estimates should be
 obtained via \code{lm} function.
 }
 \details{

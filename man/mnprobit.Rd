@@ -17,7 +17,8 @@ mnprobit(
   degrees = NULL,
   n_sim = 1000,
   n_cores = 1,
-  control = NULL
+  control = NULL,
+  regularization = NULL
 )
 }
 \arguments{
@@ -42,11 +43,11 @@ If \code{opt_type = "pso"} then \code{\link[gena]{pso}} will be used
 i.e. particle swarm optimization.}
 
 \item{opt_args}{a list of input arguments for the optimization function
-selected via \code{opt_type} argument.}
+selected via \code{opt_type} argument. See 'Details' for information.}
 
 \item{start}{numeric vector of initial parameters' values. It will be used
 as a starting point for optimization purposes. It is also possible to
-provide an object of class \code{'mnprobit'} then it's \code{'par'} 
+provide an object of class \code{'mnprobit'} then its \code{'par'} 
 element will be used as a starting point.}
 
 \item{estimator}{character determining estimation method.
@@ -62,12 +63,12 @@ If \code{cov_type = "sandwich"} (default) then sandwich covariance matrix
 estimator will be applied.}
 
 \item{degrees}{vector of non-negative integers such that \code{degrees[i]}
-represents degree of polynomial which elements are selectivity correction
-terms associated with the \code{i}-th ordered equation. See Details for
+represents degree of the polynomial which elements are selectivity correction
+terms associated with the \code{i}-th ordered equation. See 'Details' for
 additional information.}
 
 \item{n_sim}{integer representing the number of GHK draws when there are
-more then 3 ordered equations. Otherwise alternative (much more efficient) 
+more than 3 ordered equations. Otherwise alternative (much more efficient) 
 algorithms will be used to calculate multivariate normal probabilities.}
 
 \item{n_cores}{positive integer representing the number of CPU cores used for 
@@ -76,6 +77,20 @@ the number of available physical cores especially when the system of
 ordered equations has 2 or 3 equations.}
 
 \item{control}{a list of control parameters. See 'Details'.}
+
+\item{regularization}{a list of control parameters for regularization.
+Element \code{ridge_ind} is a vector of indexes of parameters subject to 
+regularization according to quadratic (ridge) penalty function.
+These indexes correspond to parameters from \code{par} output element. 
+Set \code{show_ind} argument of
+\code{\link[switchSelection]{summary.mnprobit}} to \code{TRUE} to see
+these indexes.
+Element \code{ridge_scale} is a numeric vector of weights of ridge
+penalty function. 
+Element \code{ridge_location} is a numeric vector of values to be subtracted
+from parameters before they pass into penalty function.
+Elements \code{lasso_ind}, \code{lasso_scale} and \code{lasso_location} are
+the same but for the absolute value (lasso) penalty term.}
 }
 \value{
 This function returns an object of class 'mnprobit' which is a
@@ -92,7 +107,7 @@ of regression coefficients estimates of the continuous equation in
 of alternatives equations i.e. \eqn{\widehat{\Sigma}}.
 \item \code{cov2} - matrix which element \code{cov2[i, j]} is
 an estimate of the covariance between random error of i-th alternative
-equation and random erorr of continuous equation in (j+1)-th regime.
+equation and random error of continuous equation in (j+1)-th regime.
 \item \code{var2} - a vector such that \code{var2[i]} is the estimate of
 the variance of the random error of continuous equation in (i+1)-the regime.
 \item \code{logLik} - log-likelihood value.
@@ -113,6 +128,7 @@ to \eqn{\hat{\tilde{\lambda}}_{ji}}.
 without missing values.
 \item \code{cov} - estimate of the covariance matrix of parameters'
 estimator.
+\item \code{cov_type} - type of the asymptotic covariance matrix estimator.
 \item \code{cov_2step} - estimate of the covariance matrix of parameters'
 estimator associated with the second step parameters i.e.
 when \code{estimator = "2step"}.
@@ -120,7 +136,7 @@ when \code{estimator = "2step"}.
 (not intended for users).
 \item \code{regimes} - the same as \code{regimes} input argument or 
 automatically generated matrix representing the structure of the system 
-of equations. Please, see 'Details' section above for more information.3
+of equations. Please, see 'Details' section above for more information.
 \item \code{n_regimes} - the number of regimes.
 \item \code{degrees} - the same as \code{degrees} input argument.
 \item \code{model1} - first step estimation results when
@@ -131,7 +147,12 @@ of equations. Please, see 'Details' section above for more information.3
 \item \code{J} - the Jacobian of the likelihood function.
 \item \code{p_value} - p-values of the tests on significance of the 
 parameters where null hypothesis is that corresponding parameter equals zero.
+\item \code{other} - list of additional variables 
+that is not intended for the user.
 }
+
+It is highly recommended to get estimates via
+\code{\link[switchSelection]{coef.mnprobit}} function.
 }
 \description{
 This function estimates parameters of multinomial probit
@@ -169,7 +190,7 @@ alternative's equation.
 \item \eqn{w_{i}\gamma_{j}} - linear index of the \eqn{j}-th 
 alternative's equation.
 \item \eqn{u_{i}} - multivariate normal random vector which elements are
-                      normal variates.
+                      normal random variables.
 \item \eqn{\Sigma} - covariance matrix of \eqn{u_{i}}.
 }
 
@@ -252,7 +273,9 @@ A^{(j)}_{t_{1}t_{2}} =
 -1\text{, if } t_{1}<j \text{ and } t_{1}=t_{2}\\
 -1\text{, if } t_{1}>j \text{ and } t_{1}=t_{2} + 1\\
 0\text{, otherwise}
-\end{cases}, t_{1},t_{2}\leq J-1\\
+\end{cases}, t_{1},t_{2}\leq J-1
+}
+\deqn{
 \lambda^{(j)}_{i}=\lambda^{(j)}_{i}
 \left(\tilde{z}_{1}^{(ji)},...,
       \tilde{z}_{J-1}^{(ji)}\right)=
@@ -274,12 +297,27 @@ u_{Ji}=0,\quad \gamma_{J}=\left(0,...,0\right).
 
 Note that \eqn{\tilde{\lambda}} are estimated on the first step using 
 estimates from multinomial probit model. On the second step these estimates
-are used as a regressors (covariates) where \eqn{\beta} and
+are used as the regressors (covariates) where \eqn{\beta} and
 \eqn{\rho_{t}\sigma_{t}\sigma_{\varepsilon}} are estimated via least squares
 method. Standard errors are estimated by approach proposed by Newey (2009).
 
 Argument \code{degrees} is similar to the same argument of 
 \code{\link[switchSelection]{mvoprobit}}.
+
+Optimization always starts with \code{\link[stats]{optim}}. If
+\code{opt_type = "gena"} or \code{opt_type = "pso"} then 
+\code{\link[gena]{gena}} or \code{\link[gena]{pso}} is used
+to proceed optimization starting
+from initial point provided by \code{optim}. Manual arguments to 
+\code{\link[stats]{optim}}
+should be provided in a form of a list through \code{opt_args$optim}.
+Similarly \code{opt_args$gena} and \code{opt_args$pso} provide manual
+arguments to \code{\link[gena]{gena}} and \code{\link[gena]{pso}}.
+For example to provide Nelder-Mead optimizer to 
+\code{\link[stats]{optim}} and
+restrict the number of genetic algorithm iterations to \eqn{10} make
+\code{opt_args = list(optim = list(method = "Nelder-Mead"), 
+gena = list(maxiter = 10))}.
 
 For more information on multivariate sample selection and endogenous
 switching models see 
@@ -294,10 +332,47 @@ Currently \code{control} has no input arguments intended for the users.
 This argument is used for some internal purposes of the package.
 }
 \examples{
+\donttest{
 # -------------------------------
-# Example 1
+# CPS data example
+# -------------------------------
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Upload data
+data(cps)
+
+# Prepare multinomial variable for education
+cps$educ <- NA
+cps$educ[cps$basic == 1] <- 1
+cps$educ[cps$bachelor == 1] <- 2
+cps$educ[cps$master == 1] <- 3
+
+# Multinomial probit model for education
+f_educ <- educ ~ age + I(age ^ 2) + sbachelor + smaster
+model1 <- mnprobit(f_educ, data = cps)
+summary(model1)
+
+# Endogenous education treatment model
+f_lwage <- lwage ~ age + I(age ^ 2) + bachelor + master + health
+model2 <- mnprobit(f_educ, f_lwage, data = cps, cov_type = "gop")
+summary(model2)
+
+# Endogenous education switching model
+f_lwage2 <- lwage ~ age + I(age ^ 2) + health
+model3 <- mnprobit(f_educ, f_lwage2, data = cps, 
+                   regimes = c(0, 1, 2), cov_type = "gop")
+summary(model3)
+}
+ 
+# -------------------------------
+# Simulated data example 1
 # Multinomial probit model
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1
@@ -409,9 +484,12 @@ predict(model, alt = 2, type = "lambda", newdata = newdata)
 
 \donttest{
 # -------------------------------
-# Example 2
+# Simulated data example 2
 # Multinomial selection model
 # -------------------------------
+
+# Load required package
+library("mnorm")
 
 # ---
 # Step 1

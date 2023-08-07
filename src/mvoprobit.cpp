@@ -5,7 +5,9 @@
 #include "helpFunctions.h"
 using namespace Rcpp;
 
+#ifdef _OPENMP
 // [[Rcpp::plugins(openmp)]]
+#endif
 
 //' Log-likelihood Function of Multivariate Ordered Probit Model
 //' @description Calculates log-likelihood function of multivariate ordered
@@ -16,13 +18,15 @@ using namespace Rcpp;
 //' @param n_sim the number of random draws for multivariate 
 //' normal probabilities.
 //' @param n_cores the number of cores to be used. 
+//' @param regularization list of regularization parameters.
 //' @export
 // [[Rcpp::export(rng = false)]]
 NumericMatrix lnL_mvoprobit(const arma::vec par,
                             const List control_lnL,
                             const String out_type = "val",
                             const int n_sim = 1000,
-                            const int n_cores = 1)
+                            const int n_cores = 1,
+                            const Nullable<List> regularization = R_NilValue)
 {
   // Determine whether gradient and Jacobian should be estimated
   const bool is_grad = (out_type == "grad");
@@ -67,6 +71,56 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
   const arma::field<arma::uvec> ind_eq = control_lnL["ind_eq"];
   const arma::field<arma::uvec> ind_eq2 = control_lnL["ind_eq2"];
   const arma::field<arma::uvec> ind_eq_all = control_lnL["ind_eq_all"];
+  
+  // Get parameters of the regularization
+  List regularization1(regularization);
+  arma::uvec ridge_ind;
+  arma::uvec lasso_ind;
+  arma::vec ridge_scale;
+  arma::vec ridge_location;
+  arma::vec lasso_scale;
+  arma::vec lasso_location;
+  bool is_ridge = false;
+  bool is_lasso = false;
+  const bool is_regularization = regularization1.size() > 0;
+  if (is_regularization)
+  {
+    // Ridge parameters
+    is_ridge = regularization1.containsElementNamed("ridge_ind");
+
+    if (is_ridge)
+    {
+      // Indexes
+      arma::uvec ridge_ind_tmp = regularization1["ridge_ind"];
+      ridge_ind = ridge_ind_tmp;
+
+      // Scales
+      arma::vec ridge_scale_tmp = regularization1["ridge_scale"];
+      ridge_scale = ridge_scale_tmp;
+
+      // Locations
+      arma::vec ridge_location_tmp = regularization1["ridge_location"];
+      ridge_location = ridge_location_tmp;
+    }
+    
+    // Lasso parameters
+    is_lasso = regularization1.containsElementNamed("lasso_ind");
+
+    if (is_lasso)
+    {
+      // Indexes
+      arma::uvec lasso_ind_tmp = regularization1["lasso_ind"];
+      lasso_ind = lasso_ind_tmp;
+      
+      // Scales
+      arma::vec lasso_scale_tmp = regularization1["lasso_scale"];
+      lasso_scale = lasso_scale_tmp;
+      
+      // Locations
+      arma::vec lasso_location_tmp = regularization1["lasso_location"];
+      lasso_location = lasso_location_tmp;
+    }
+  }
 
   // Determine indexes of coefficients and 
   // covariances in the vector of parameters
@@ -76,8 +130,8 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
   const arma::field<arma::uvec> sigma2_ind = control_lnL["sigma2_ind"];
   const arma::umat sigma_ind_mat = control_lnL["sigma_ind_mat"];
   const arma::field<arma::umat> sigma2_ind_mat = control_lnL["sigma2_ind_mat"];
-  const arma::field<arma::uvec> var_y_ind = control_lnL["var_y_ind"];
-  const arma::field<arma::umat> cov_y_ind = control_lnL["cov_y_ind"];
+  const arma::field<arma::uvec> var2_ind = control_lnL["var2_ind"];
+  const arma::field<arma::umat> cov2_ind = control_lnL["cov2_ind"];
   const arma::field<arma::uvec> cuts_ind = control_lnL["cuts_ind"];
 
   // Store the coefficients for each equation
@@ -174,25 +228,37 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
   List marginal_par_list;
   if (is_marginal)
   {
+    bool is_marginal_par_valid = true;
     for (int i = 0; i < n_eq; i++)
     {
       if (marginal_par_n.at(i) > 0)
       {
+        // Assign marginal distribution parameters
         marginal_par.at(i) = par.elem(marginal_par_ind.at(i));
-        // return if coefficients are too large
-        // if (any(abs(marginal_par.at(i)) > 10))
-        // {
-        //   if (is_diff)
-        //   {
-        //     NumericMatrix out_tmp(n_par, 1);
-        //     std::fill(out_tmp.begin(), out_tmp.end(), -(1e+100));
-        //     return(out_tmp);
-        //   }
-        //   NumericMatrix out_tmp(1,1);
-        //   out_tmp(0, 0) = -(1e+100);
-        //   return(out_tmp);
-        // }
+        
+        // Validate marginal distribution parameters
+        if (marginal_names[i] == "student")
+        {
+          if (marginal_par.at(i).at(0) <= 2)
+          {
+            is_marginal_par_valid = false;
+          }
+        }
       }
+    }
+    // Stop if there are incorrect marginal
+    // distribution parameters
+    if (!is_marginal_par_valid)
+    {
+      if (is_diff)
+      {
+        NumericMatrix out_tmp(n_par, 1);
+        std::fill(out_tmp.begin(), out_tmp.end(), -(1e+100));
+        return(out_tmp);
+      }
+      NumericMatrix out_tmp(1,1);
+      out_tmp(0, 0) = -(1e+100);
+      return(out_tmp);
     }
     // store the results into Rcpp list
     marginal_par_list = wrap(marginal_par);
@@ -285,11 +351,11 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
       {
         int j1_o = ind_eq2(i).at(j1);
         // arma::uvec j1_o_uvec = {j1_o};
-        sigma.at(n_eq + j1_o, n_eq + j1_o) = par.at(var_y_ind(j1_o).at(groups2.at(i, j1_o)));
+        sigma.at(n_eq + j1_o, n_eq + j1_o) = par.at(var2_ind(j1_o).at(groups2.at(i, j1_o)));
         for (int j2 = 0; j2 < n_eq; j2++)
         {
-          sigma.at(j1_o + n_eq, j2) = par.at(cov_y_ind(j1_o).at(groups2.at(i, j1_o), j2));
-          sigma.at(j2, j1_o + n_eq) = par.at(cov_y_ind(j1_o).at(groups2.at(i, j1_o), j2));
+          sigma.at(j1_o + n_eq, j2) = par.at(cov2_ind(j1_o).at(groups2.at(i, j1_o), j2));
+          sigma.at(j2, j1_o + n_eq) = par.at(cov2_ind(j1_o).at(groups2.at(i, j1_o), j2));
         }
       }
       if (n_eq2 >= 2)
@@ -563,17 +629,17 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
           {
             int j1_o = ind_eq(i).at(j1);
             arma::uvec j1_o_uvec = {(unsigned int)j1_o};
-            arma::uvec cov_y_ind_uvec = {cov_y_ind(j_o).at(groups2.at(i, j_o), j1_o)};
+            arma::uvec cov2_ind_uvec = {cov2_ind(j_o).at(groups2.at(i, j_o), j1_o)};
             arma::vec tube_tmp = grad_sigma.tube(n_eq_g(i) + j, j1);
-            jac.submat(ind_g(i), cov_y_ind_uvec) = tube_tmp;
+            jac.submat(ind_g(i), cov2_ind_uvec) = tube_tmp;
           }
           // part related to density
           arma::mat jac_tmp_2 = X_tmp.each_col() % (-grad_x.col(j));
           arma::vec jac_tmp_2_var = grad_sigma_den.tube(j, j);
           // combine both parts
-          arma::uvec var_y_ind_uvec = {var_y_ind.at(j_o).at(groups2(i, j_o))};
+          arma::uvec var2_ind_uvec = {var2_ind.at(j_o).at(groups2(i, j_o))};
           jac.submat(ind_g(i), coef2_ind(j_o).row(groups2(i, j_o))) = jac_tmp_1 + jac_tmp_2;
-          jac.submat(ind_g(i), var_y_ind_uvec) = jac_tmp_1_var + jac_tmp_2_var;
+          jac.submat(ind_g(i), var2_ind_uvec) = jac_tmp_1_var + jac_tmp_2_var;
         }
         // for covariances between continuous equations
         if (n_eq2_g.at(i) > 1)
@@ -619,11 +685,45 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
   if (is_grad)
   {
     arma::rowvec grad = sum(jac, 0);
+    // Account for regularization if need
+    if (is_regularization)
+    {
+      // Ridge
+      if (is_ridge)
+      {
+        arma::vec par_ridge = par.elem(ridge_ind) - ridge_location;
+        grad.elem(ridge_ind) = grad.elem(ridge_ind) - 
+                               2 * par_ridge % ridge_scale;
+      }
+      if (is_lasso)
+      {
+      arma::vec par_lasso = par.elem(lasso_ind) - lasso_location;
+      grad.elem(lasso_ind) = grad.elem(lasso_ind) - 
+                             arma::sign(par_lasso) % lasso_scale;
+      }
+    }
     return(wrap(grad));
   }
 
   // Calculate log-likelihood
   double lnL_val = sum(lnL);
+  
+  // Perform regularization if need
+  if (is_regularization)
+  {
+    if (is_ridge)
+    {
+      arma::vec par_ridge = par.elem(ridge_ind) - ridge_location;
+      lnL_val -= sum(pow(par_ridge, 2) % ridge_scale);
+    }
+    if (is_lasso)
+    {
+      arma::vec par_lasso = par.elem(lasso_ind) - lasso_location;
+      lnL_val -= sum(arma::abs(par_lasso) % lasso_scale);
+    }
+  }
+  
+  // Check validity of the likelihood
   if(std::isnan(lnL_val))
   {
     NumericMatrix out_tmp(1, 1);
@@ -632,6 +732,7 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
   }
   NumericMatrix lnL_mat(1, 1);
   lnL_mat(0, 0) = lnL_val;
+
   return(lnL_mat);
 }
 
@@ -645,13 +746,16 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
 //' @param n_sim the number of random draws for multivariate 
 //' normal probabilities.
 //' @param n_cores the number of cores to be used. 
+//' @param regularization list of regularization parameters.
 //' @export
 // [[Rcpp::export(rng = false)]]
 NumericMatrix grad_mvoprobit(const arma::vec par,
                              const List control_lnL,
                              const String out_type = "grad",
                              const int n_sim = 1000,
-                             const int n_cores = 1)
+                             const int n_cores = 1,
+                             const Nullable<List> regularization = R_NilValue)
 {
-  return(lnL_mvoprobit(par, control_lnL, "grad", n_sim, n_cores));
+  return(lnL_mvoprobit(par, control_lnL, "grad", 
+                       n_sim, n_cores, regularization));
 }

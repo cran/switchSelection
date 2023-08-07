@@ -9,7 +9,7 @@
 #' is nested into \code{model2} or vice versa. More precisely it is assumed
 #' that the model with smaller log-likelihood value is nested into the model
 #' with greater log-likelihood value.
-#' @return The function returns an object of class \code{lrtest} that is
+#' @return The function returns an object of class \code{'lrtest'} that is
 #' a list with the following elements:
 #' \itemize{
 #' \item \code{n1} - the number of observations in the first model.
@@ -20,7 +20,7 @@
 #' \item \code{df2} - the number of parameters in the second model.
 #' \item \code{restrictions} - the number of restrictions in the nested model.
 #' \item \code{value} - chi-squared test statistic value.
-#' \item \code{p_value} - p-value of chi-squared test.
+#' \item \code{p_value} - p-value of the chi-squared test.
 #' }
 #' @examples 
 #' set.seed(123)
@@ -71,8 +71,8 @@ lrtest <- function(model1, model2)
 
 #' Print Method for Likelihood Ratio Test
 #' @description Prints summary for an object of class 'lrtest'.
-#' @param x object of class "lrtest"
-#' @param ... further arguments (currently ignored)
+#' @param x object of class "lrtest".
+#' @param ... further arguments (currently ignored).
 #' @return The function returns input argument \code{x}.
 print.lrtest <- function(x, ...)
 {
@@ -89,8 +89,11 @@ print.lrtest <- function(x, ...)
   cat(paste0("p-value = ", round(x$p_value, 3), 
              starsVector(x$p_value),
              "\n"))
-  cat("--\n")
-  cat("Signif. codes:  0 '***' 0.01 '**' 0.05 '*' 0.1 \n")
+  if (getOption("show.signif.stars"))
+  {
+    cat("--\n")
+    cat("Signif. codes:  0 '***' 0.01 '**' 0.05 '*' 0.1 \n")
+  }
   return(x)
 }
 
