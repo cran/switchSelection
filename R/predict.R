@@ -124,9 +124,10 @@ predict.mvoprobit <- function(object, ...,
     }
     # respect to coefficients of variance equation
     coef_var_ind <- object$control_lnL$coef_var_ind
+    is_het <- object$other$is_het
     for (i in 1:n_eq)
     {
-      if (length(coef_var_ind[[i]]) != 0)
+      if (is_het[i])
       {
         for (j in 1:length(coef_var_ind[[i]]))
         {

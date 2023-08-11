@@ -1,4 +1,4 @@
-1e67381c4ae4953de666b030f6ece975 *DESCRIPTION
+91bdd2d1e441a1b0b28b2696b9bc5430 *DESCRIPTION
 8e3467f23641d83379ca6679096c5ed0 *NAMESPACE
 82cc049a9ce166da71f6c64a3c544131 *R/RcppExports.R
 be870d24b8b0ae84053681bf9c80daba *R/coef.R
@@ -10,14 +10,14 @@ be870d24b8b0ae84053681bf9c80daba *R/coef.R
 04a984dd0d9eb88b43e5ac80dfdc3cc1 *R/lm.R
 d1d799746061a06d9353411f396b17b4 *R/logLik.R
 82e237d8fbd10f42f6cb922f85ae4a9d *R/lrtest.R
-749d8961c199c6582cfee06f36096372 *R/mnprobit.R
-f38a4edfe4dc939e7c9d0437182230a4 *R/mvoprobit.R
+57d72efa4537d6951bdf2ca1ec7e6bad *R/mnprobit.R
+759866c34750c459e21849626e874d99 *R/mvoprobit.R
 c35338ce4735f5a6dd42457180501f9b *R/opt.R
 8f88f51ba18ebaa0c4120e43ccd5f050 *R/par.R
-ce34ef7dda7e9487e95eb3681735ab36 *R/predict.R
+02510524ce104aa79c364ef2f7335d60 *R/predict.R
 c97bb46df4b44dab1923e69bdbd3a1c4 *R/regularization.R
 f8f4e6cf6bb429a858968b17eebc7c86 *R/sigma.R
-f710fff1335f51feabb8845ef06801ba *R/summary.R
+f818a4b5c1285f7bfe3dbe896be30706 *R/summary.R
 ff758cafea37e21e2263d9fc6e348b21 *R/tbl.R
 3b0f068f1d9f5c2971fade5cc4e0e9c4 *R/vcov.R
 6c50b2c067430690997c9538b4c0c965 *data/cps.rda

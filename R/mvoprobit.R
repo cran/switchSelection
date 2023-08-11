@@ -93,6 +93,28 @@ mvoprobit <- function(formula,
                 "Please, insure that 'length(formula2) == 1'."))
   }
   
+  # formula
+  if (!is.list(formula))
+  {
+    tryCatch(formula <- as.formula(formula),
+             error = function(e) {stop("Invalid 'formula' argument.")})
+    formula <- list(formula)
+  }
+  
+  # formula2
+  is2 <- FALSE
+  if (!is.null(formula2))
+  {
+    is2 <- TRUE
+    if (!is.list(formula2))
+    {
+      tryCatch(formula2 <- as.formula(formula2),
+               error = function(e) {stop("Invalid 'formula2' argument.")})
+      formula2 <- list(formula2)
+    }
+  }
+  out$other$is2 <- is2
+  
     # groups
   if (!is.null(groups))
   {
@@ -141,28 +163,6 @@ mvoprobit <- function(formula,
                   "\n"))
     }
   }
-  
-    # formula
-  if (!is.list(formula))
-  {
-    tryCatch(formula <- as.formula(formula),
-             error = function(e) {stop("Invalid 'formula' argument.")})
-    formula <- list(formula)
-  }
-  
-    # formula2
-  is2 <- FALSE
-  if (!is.null(formula2))
-  {
-    is2 <- TRUE
-    if (!is.list(formula2))
-    {
-      tryCatch(formula2 <- as.formula(formula2),
-               error = function(e) {stop("Invalid 'formula2' argument.")})
-      formula2 <- list(formula2)
-    }
-  }
-  out$other$is2 <- is2
   
     # marginal
   n_marginal <- length(marginal)
@@ -402,7 +402,7 @@ mvoprobit <- function(formula,
   for (i in 1:n_eq)
   {
     z[, i] <- as.vector(df_mean[[i]][, 1])
-    W_mean[[i]] <- as.matrix(df_mean[[i]][, -1])
+    W_mean[[i]] <- as.matrix(df_mean[[i]][, -1, drop = FALSE])
     if (is_het[i])
     {
       W_var[[i]] <- as.matrix(df_var[[i]][, -1, drop = FALSE])
@@ -458,7 +458,7 @@ mvoprobit <- function(formula,
   }
   
   # Calculate the number of cuts for each equation
-  n_cuts_eq <- rep(NA, n_eq)
+  n_cuts_eq <- rep(0, n_eq)
   for (i in 1:n_eq)
   {
     n_cuts_eq[i] <- max(z[, i])
@@ -525,8 +525,8 @@ mvoprobit <- function(formula,
   # Calculate the number of groups
   n_groups <- length(ind_g)
   
-  # Calculate number of observations in each group
-  n_obs_g <- rep(NA, n_groups)
+  # Calculate the number of observations in each group
+  n_obs_g <- rep(0, n_groups)
   for (i in 1:n_groups)
   {
     n_obs_g[i] <- length(ind_g[[i]])
@@ -591,7 +591,7 @@ mvoprobit <- function(formula,
 
   # Get indexes of observed equations for each group
   ind_eq <- vector(mode = "list", length = n_groups)
-  ind_eq2 <- list(NA)
+  ind_eq2 <- list(1)
   ind_eq_all <- ind_eq
   for (i in 1:n_groups)
   {
@@ -641,10 +641,14 @@ mvoprobit <- function(formula,
   n_cuts <- sum(n_cuts_eq)
   
   # Get indexes of sigma elements in parameters vector
-  sigma_ind <- (n_coef_total + 1):(n_coef_total + n_sigma)
+  sigma_ind <- 1
+  if (n_sigma > 0)
+  {
+    sigma_ind <- (n_coef_total + 1):(n_coef_total + n_sigma)
+  }
 
   # Store indexes of sigma elements in a matrix form
-  sigma_ind_mat <- matrix(NA, nrow = n_eq, ncol = n_eq)
+  sigma_ind_mat <- matrix(1, nrow = n_eq, ncol = n_eq)
   if (n_eq >= 2)
   {
     counter <- sigma_ind[1]
@@ -684,7 +688,7 @@ mvoprobit <- function(formula,
     }
     else
     {
-      coef_var_ind[[i]] <- numeric()
+      coef_var_ind[[i]] <- as.vector(1)
     }
   }
   
@@ -763,10 +767,10 @@ mvoprobit <- function(formula,
   n_regimes_total <- nrow(regimes)
   
   # If need add covariances related to continuous equations
-  var2_ind <- list(NA)
-  cov2_ind <- list(matrix(0))
-  sigma2_ind <- list(matrix(0))
-  sigma2_ind_mat <- list(matrix(0))
+  var2_ind <- list(as.vector(1))
+  cov2_ind <- list(matrix(1))
+  sigma2_ind <- list(as.vector(1))
+  sigma2_ind_mat <- list(matrix(1))
   if (is2)
   {
     # variances
@@ -776,6 +780,7 @@ mvoprobit <- function(formula,
       n_par <- n_par + n_regimes[i]
     }
     # covariances with continuous equations
+    cov2_ind <- vector(mode = "list", length = n_eq2)
     for (i in 1:n_eq2)
     {
       cov2_ind[[i]] <- matrix(ncol = n_eq, nrow = n_regimes[i])
@@ -794,7 +799,7 @@ mvoprobit <- function(formula,
       sigma2_ind_mat <- vector(mode = "list", length = n_groups)
       for (g in 1:n_groups)
       {
-        sigma2_ind_mat[[g]] <- matrix(NA, nrow = n_eq2, ncol = n_eq2)
+        sigma2_ind_mat[[g]] <- matrix(1, nrow = n_eq2, ncol = n_eq2)
       }
       # indexes for each covariance depending on regime
       counter <- 1
@@ -836,7 +841,7 @@ mvoprobit <- function(formula,
   # Parameters associated with marginal distributions
   is_marginal <- length(marginal) > 0
   out$other$is_marginal <- is_marginal
-  marginal_par_ind <- list(NA)
+  marginal_par_ind <- list(as.vector(1))
   marginal_par_n <- rep(0, n_eq)
   marginal_names <- character()
   if (is_marginal)
@@ -937,7 +942,10 @@ mvoprobit <- function(formula,
     {
       par[cuts_ind[[i]]] <- model1$cuts[[i]]
       par[coef_ind[[i]]] <- model1$coef[[i]]
-      par[coef_var_ind[[i]]] <- model1$coef_var[[i]]
+      if (is_het[i])
+      {
+        par[coef_var_ind[[i]]] <- model1$coef_var[[i]]
+      }
       if (is_marginal)
       {
         if (model1$control_lnL$marginal_par_n[i] > 0)
@@ -1212,6 +1220,7 @@ mvoprobit <- function(formula,
                             colnames_X = lapply(X, colnames), 
                             colnames_W_mean = lapply(W_mean, colnames), 
                             colnames_W_var = lapply(W_var, colnames))
+
   par <- par_list$par
   coef <- par_list$coef
   coef_var <- par_list$coef_var

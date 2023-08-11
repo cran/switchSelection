@@ -302,15 +302,20 @@ mnprobit <- function(formula,
   coef_ind <- 1:n_coef_total
   
   # Store the coefficients indexes for each alternative
-  coef_ind_alt <- matrix(NA, nrow = n_coef, ncol = n_alt - 1)
+  coef_ind_alt <- matrix(1, nrow = n_coef, ncol = n_alt - 1)
   for (i in 1:(n_alt - 1)) 
   {
     coef_ind_alt[, i] <- ((i - 1) * n_coef + 1):(i * n_coef)
   }
   
-  # Get indexes of covariances between alternatives
-  sigma_ind <- (n_coef_total + 1):n_par
-  sigma_ind_mat <- matrix(NA, nrow = n_sigma, ncol = 2)
+  # Get indexes of the covariances between alternatives
+  sigma_ind <- 1
+  sigma_ind_mat <- matrix(1)
+  if (n_sigma > 0)
+  {
+    sigma_ind <- (n_coef_total + 1):n_par
+    sigma_ind_mat <- matrix(1, nrow = n_sigma, ncol = 2)
+  }
   if (n_alt > 2)
   {
     counter <- 1
@@ -334,8 +339,8 @@ mnprobit <- function(formula,
   var2_ind_regime <- 1
   if (is2)
   {
-    coef2_ind_regime <- matrix(NA, nrow = n_coef2, ncol = n_regimes)
-    cov2_ind_regime <- matrix(NA, nrow = n_alt - 1, ncol = n_regimes)
+    coef2_ind_regime <- matrix(1, nrow = n_coef2, ncol = n_regimes)
+    cov2_ind_regime <- matrix(1, nrow = n_alt - 1, ncol = n_regimes)
     var2_ind_regime <- vector(mode = "numeric", length = n_regimes)
     for (i in 1:n_regimes) 
     {

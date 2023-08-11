@@ -317,7 +317,7 @@ print.mvoprobit <- function(x, ...)
              "equations: \n"))
   cat("--- \n")
   groups_all <- x$groups
-  colnames
+
   if (x$other$is2)
   {
     groups_all <- cbind(groups_all, x$groups2)
@@ -467,7 +467,10 @@ print.summary.mnprobit <- function(x, ...)
     cat("Multinomial probit model \n")
   }
   cat(paste0("There are ", n_alt, " alternatives",
-             ifelse(is2, paste0(" and ", n_regimes, " regimes"), ". \n")))
+             ifelse(is2, paste0(" and ", n_regimes, 
+                                ifelse(n_regimes > 1, " regimes", " regime")),
+                    ""), 
+             " \n"))
   cat("--- \n")
   if (estimator == "ml")
   {
