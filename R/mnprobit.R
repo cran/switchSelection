@@ -201,7 +201,7 @@ mnprobit <- function(formula,
   # Extract dependent variables and regressors
     # multinomial equation
   z <- df[, 1]                                             # dependent variable
-  W <- as.matrix(cbind(1, df[, -1]))                       # regressors
+  W <- as.matrix(cbind(1, df[, -1, drop = FALSE]))         # regressors
   colnames(W)[1] <- "(Intercept)"
     # continuous equation
   y <- numeric()
@@ -209,7 +209,7 @@ mnprobit <- function(formula,
   if (is2)
   {
     y <- df2[, 1]
-    X <- as.matrix(cbind(1, df2[, -1]))
+    X <- as.matrix(cbind(1, df2[, -1, drop = FALSE]))
   }
   colnames(X)[1] <- "(Intercept)"
   
@@ -417,30 +417,30 @@ mnprobit <- function(formula,
     }
   }
 
-  # # Code to test derivatives
-  # if (n_sim == -1)
-  # {
-  #   f0 <- lnL_mnprobit(par = start,
-  #                      n_sim = n_sim, n_cores = n_cores,
-  #                      control_lnL = control_lnL)
-  #   grad.a <- lnL_mnprobit(par = start,
-  #                          n_sim = n_sim, n_cores = n_cores,
-  #                          control_lnL = control_lnL,
-  #                          out_type = "grad")
-  #   grad.n <- rep(NA, n_par)
-  #   for (i in 1:n_par)
-  #   {
-  #     delta <- 1e-6
-  #     start.delta <- start
-  #     start.delta[i] <- start[i] + delta
-  #     f1 <- lnL_mnprobit(par = start.delta,
-  #                        n_sim = n_sim, n_cores = n_cores,
-  #                        control_lnL = control_lnL)
-  #     grad.n[i] <- (f1 - f0) / delta
-  #   }
-  #   return(cbind(analytical = as.vector(grad.a), 
-  #                numeric = as.vector(grad.n)))
-  # }
+  # Code to test derivatives
+  if (n_sim == -1)
+  {
+    f0 <- lnL_mnprobit(par = start,
+                       n_sim = n_sim, n_cores = n_cores,
+                       control_lnL = control_lnL)
+    grad.a <- lnL_mnprobit(par = start,
+                           n_sim = n_sim, n_cores = n_cores,
+                           control_lnL = control_lnL,
+                           out_type = "grad")
+    grad.n <- rep(NA, n_par)
+    for (i in 1:n_par)
+    {
+      delta <- 1e-6
+      start.delta <- start
+      start.delta[i] <- start[i] + delta
+      f1 <- lnL_mnprobit(par = start.delta,
+                         n_sim = n_sim, n_cores = n_cores,
+                         control_lnL = control_lnL)
+      grad.n[i] <- (f1 - f0) / delta
+    }
+    return(cbind(analytical = as.vector(grad.a),
+                 numeric = as.vector(grad.n)))
+  }
   
   # Validate regularization
   regularization <- regularization_validate(regularization = regularization, 

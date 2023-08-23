@@ -188,10 +188,7 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
     out_tmp(0, 0) = -(1e+100);
     return(out_tmp);
   }
-  
-  // Vector of zero means
-  NumericVector mean_zero_R(n_alt - 1);
-  
+
   // Estimate the linear index for each alternative
   arma::mat li(n_obs, n_alt - 1);
   for (int i = 0; i < (n_alt - 1); i++)
@@ -284,6 +281,9 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
       return(out_tmp);
     }
 
+    // Vector of zero means
+    NumericVector mean_zero_R(sigma_alt_R.ncol());
+
     // Estimate all necessary differences in utilities
     // related to linear indexes
     arma::mat li_diff = arma::mat(n_alt_obs, n_alt - 1);
@@ -343,6 +343,20 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
     if (regime != -1)
     {
       lnL.elem(ind_alt(i)) = lnL.elem(ind_alt(i)) + den(ind_alt(i));
+    }
+    
+    // Check validity of the likelihood
+    if(lnL.elem(ind_alt(i)).has_inf() || lnL.elem(ind_alt(i)).has_nan())
+    {
+      if (is_diff)
+      {
+        NumericMatrix out_tmp(n_par, 1);
+        std::fill(out_tmp.begin(), out_tmp.end(), -(1e+100));
+        return(out_tmp);
+      }
+      NumericMatrix out_tmp(1,1);
+      out_tmp(0, 0) = -(1e+100);
+      return(out_tmp);
     }
 
     // Differentiate if need
@@ -481,6 +495,7 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
         grad.elem(ridge_ind) = grad.elem(ridge_ind) - 
           2 * par_ridge % ridge_scale;
       }
+      // Lasso
       if (is_lasso)
       {
         arma::vec par_lasso = par.elem(lasso_ind) - lasso_location;
@@ -493,7 +508,7 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
 
   // Calculate log-likelihood
   double lnL_val = sum(lnL);
-  
+
   // Perform regularization if need
   if (is_regularization)
   {
@@ -509,17 +524,10 @@ NumericMatrix lnL_mnprobit(const arma::vec par,
     }
   }
   
-  // Check validity of the likelihood
-  if(std::isnan(lnL_val))
-  {
-    NumericMatrix out_tmp(1, 1);
-    out_tmp(0, 0) = -(1e+100);
-    return(out_tmp);
-  }
+  // Return the log-likelihood
   NumericMatrix lnL_mat(1, 1);
   lnL_mat(0, 0) = lnL_val;
-  return(lnL_mat);
-  
+
   return(lnL_mat);
 }
 

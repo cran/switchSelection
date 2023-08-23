@@ -143,6 +143,12 @@ mvoprobit <- function(formula,
   }
   
     # cov_type
+  cov_type1 <- "sandwich"
+  if (length(cov_type) > 1)
+  {
+    cov_type1 <- cov_type[1]
+    cov_type <- cov_type[2]
+  }
   cov_type <- tolower(cov_type)
   cov_type_vec <- NULL
   if (estimator == "ml")
@@ -232,15 +238,16 @@ mvoprobit <- function(formula,
   {
     if (is.null(model1))
     {
-      model1 <- mvoprobit(formula = formula, 
+      model1 <- mvoprobit(formula = formula,
                           groups = groups,
-                          data = data, 
+                          data = data,
                           estimator = "ml",
-                          marginal = marginal, 
+                          marginal = marginal,
                           opt_type = opt_type,
                           opt_args = opt_args,
-                          n_sim = n_sim, 
+                          n_sim = n_sim,
                           n_cores = n_cores,
+                          cov_type = cov_type1,
                           control = list(cov_type = cov_type))
     }
     out$model1 <- model1

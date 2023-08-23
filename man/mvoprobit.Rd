@@ -72,11 +72,26 @@ If \code{estimator = "2step"} then two-step estimation procedure similar
 to Heckman's method will be applied.}
 
 \item{cov_type}{character determining the type of covariance matrix to be
-returned and used for summary. If \code{cov_type = "hessian"} then negative
-inverse of Hessian matrix will be applied. If \code{cov_type = "gop"} then
-inverse of Jacobian outer products will be used.
+returned and used for summary.
+First, suppose that \code{estimator = "ml"} then the following estimators are 
+available. 
+If \code{cov_type = "hessian"} then negative inverse of Hessian matrix will 
+be applied. 
+If \code{cov_type = "gop"} then inverse of Jacobian outer products will be 
+used.
 If \code{cov_type = "sandwich"} (default) then sandwich covariance matrix
-estimator will be applied.}
+estimator will be applied.
+Second, suppose that \code{estimator = "2step"} then by default sandwich 
+estimator will be used for the first step parameters and the following 
+estimators are available for the second step parameters.
+If \code{cov_type = "parametric"} then parametric estimator 
+will be used on the second step which assumes joint normality of
+random errors.
+If \code{cov_type = "nonparametric"} then nonparametric estimator 
+will be used.
+Also \code{cov_type} may be a character vector such that \code{cov_type[i]}
+determines the covariance matrix estimator of the 
+\code{i}-th step parameters.}
 
 \item{degrees}{vector of non-negative integers such that \code{degrees[i]}
 represents degree of polynomial which elements are selectivity correction

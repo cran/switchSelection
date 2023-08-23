@@ -519,6 +519,20 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
       {
         lnL.elem(ind_g(i)) = prob_arma;
       }
+      
+      // Check validity of the likelihood
+      if(lnL.elem(ind_g(i)).has_inf() || lnL.elem(ind_g(i)).has_nan())
+      {
+        if (is_diff)
+        {
+          NumericMatrix out_tmp(n_par, 1);
+          std::fill(out_tmp.begin(), out_tmp.end(), -(1e+100));
+          return(out_tmp);
+        }
+        NumericMatrix out_tmp(1,1);
+        out_tmp(0, 0) = -(1e+100);
+        return(out_tmp);
+      }
     }
 
     // Store Jacobian if need
@@ -724,12 +738,6 @@ NumericMatrix lnL_mvoprobit(const arma::vec par,
   }
   
   // Check validity of the likelihood
-  if(std::isnan(lnL_val))
-  {
-    NumericMatrix out_tmp(1, 1);
-    out_tmp(0, 0) = -(1e+100);
-    return(out_tmp);
-  }
   NumericMatrix lnL_mat(1, 1);
   lnL_mat(0, 0) = lnL_val;
 

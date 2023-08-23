@@ -8,7 +8,7 @@ delta_method(
   object,
   fn,
   fn_args = list(),
-  eps = sqrt(.Machine$double.eps) * 10,
+  eps = max(1e-04, sqrt(.Machine$double.eps) * 10),
   cl = 0.95
 )
 }

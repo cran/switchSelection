@@ -1,7 +1,7 @@
 # Differentiate function respect to parameters
 # estimated via mvoprobit function
 deriv_mvoprobit <- function(object, fn, fn_args = list(), 
-                            eps = sqrt(.Machine$double.eps) * 10,
+                            eps = max(1e-4, sqrt(.Machine$double.eps) * 10),
                             type = "default")
 {
   # Get some variables
@@ -30,13 +30,22 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
   {
     for (j in 1:length(object$coef[[i]]))
     {
+      # save initial value
       par_old_tmp <- object$coef[[i]][j] 
+      # prepare increment
       eps_tmp <- eps * abs(par_old_tmp)
+      # plus
       fn_args$object$coef[[i]][j] <- par_old_tmp + eps_tmp
-      fn_val_eps <- do.call(what = fn, args = fn_args)
-      out[, coef_ind[[i]][j]] <- (fn_val_eps - fn_val) / eps_tmp
+      fn_plus <- do.call(what = fn, args = fn_args)
+      # minus
+      fn_args$object$coef[[i]][j] <- par_old_tmp - eps_tmp
+      fn_minus <- do.call(what = fn, args = fn_args)
+      # derivative
+      out[, coef_ind[[i]][j]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+      # names
       colnames(out)[coef_ind[[i]][j]] <- paste0("coef",  j, " of ",
                                                 object$other$z_names[i])
+      # set initial value
       fn_args$object$coef[[i]][j] <- par_old_tmp
     }
   }
@@ -47,14 +56,23 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
   {
     for (j in 1:length(object$cuts[[i]]))
     {
+      # save initial value
       par_old_tmp <- object$cuts[[i]][j]
+      # prepare increment
       eps_tmp <- eps * abs(par_old_tmp)
+      # plus
       fn_args$object$cuts[[i]][j] <- par_old_tmp + eps_tmp
-      fn_val_eps <- do.call(what = fn, args = fn_args)
-      out[, cuts_ind[[i]][j]] <- (fn_val_eps - fn_val) / eps_tmp
-      fn_args$object$cuts[[i]][j] <- par_old_tmp
+      fn_plus <- do.call(what = fn, args = fn_args)
+      # minus
+      fn_args$object$cuts[[i]][j] <- par_old_tmp - eps_tmp
+      fn_minus <- do.call(what = fn, args = fn_args)
+      # derivative
+      out[, cuts_ind[[i]][j]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+      # names
       colnames(out)[cuts_ind[[i]][j]] <- paste0("cut",  j, " of ",
                                                 object$other$z_names[i])
+      # set initial value
+      fn_args$object$cuts[[i]][j] <- par_old_tmp
     }
   }
   
@@ -66,14 +84,23 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
     {
       for (j in 1:length(coef_var_ind[[i]]))
       {
+        # save initial value
         par_old_tmp <- object$coef_var[[i]][j]
+        # prepare increment
         eps_tmp <- eps * abs(par_old_tmp)
+        # plus
         fn_args$object$coef_var[[i]][j] <- par_old_tmp + eps_tmp
-        fn_val_eps <- do.call(what = fn, args = fn_args)
-        out[, coef_var_ind[[i]][j]] <- (fn_val_eps - fn_val) / eps_tmp
-        fn_args$object$coef_var[[i]][j] <- par_old_tmp
+        fn_plus <- do.call(what = fn, args = fn_args)
+        # minus
+        fn_args$object$coef_var[[i]][j] <- par_old_tmp - eps_tmp
+        fn_minus <- do.call(what = fn, args = fn_args)
+        # derivative
+        out[, coef_var_ind[[i]][j]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+        # names
         colnames(out)[coef_var_ind[[i]][j]] <- paste0("coef_var", j, " of ",
                                                       object$other$z_names[i])
+        # set initial value
+        fn_args$object$coef_var[[i]][j] <- par_old_tmp
       }
     }
   }
@@ -87,19 +114,29 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
     {
       for (j in (i + 1):n_eq)
       {
+        # save initial value
         par_old_tmp <- object$sigma[i, j]
+        # prepare increment
         eps_tmp <- eps * abs(par_old_tmp)
+        # plus
         fn_args$object$sigma[i, j] <- par_old_tmp + eps_tmp
         fn_args$object$sigma[j, i] <- fn_args$object$sigma[i, j]
-        fn_val_eps <- do.call(what = fn, args = fn_args)
-        out[, sigma_ind_mat[i, j]] <- (fn_val_eps - fn_val) / eps_tmp
-        fn_args$object$sigma[i, j] <- par_old_tmp
-        fn_args$object$sigma[j, i] <- par_old_tmp
+        fn_plus <- do.call(what = fn, args = fn_args)
+        # minus
+        fn_args$object$sigma[i, j] <- par_old_tmp - eps_tmp
+        fn_args$object$sigma[j, i] <- fn_args$object$sigma[i, j]
+        fn_minus <- do.call(what = fn, args = fn_args)
+        # derivative
+        out[, sigma_ind_mat[i, j]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+        # names
         colnames(out)[sigma_ind_mat[i, j]] <- paste0("cov(",
                                                       object$other$z_names[i],
                                                       ",",
                                                       object$other$z_names[j],
                                                       ")")
+        # set initial value
+        fn_args$object$sigma[i, j] <- par_old_tmp
+        fn_args$object$sigma[j, i] <- par_old_tmp
       }
     }
   }
@@ -108,18 +145,28 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
   if (object$other$is_marginal)
   {
     marginal_par_n <- object$control_lnL$marginal_par_n
-    marginal_par_ind <- lapply(object$control_lnL$marginal_par_ind, function(x){x + 1})
+    marginal_par_ind <- lapply(object$control_lnL$marginal_par_ind, 
+                               function(x){x + 1})
     for (i in 1:n_eq)
     {
       if (marginal_par_n[i] > 0)
       {
         for (j in 1:marginal_par_n[i])
         {
+          # save initial value
           par_old_tmp <- object$marginal_par[[i]][j]
+          # prepare increment
           eps_tmp <- eps * abs(par_old_tmp)
+          # plus
           fn_args$object$marginal_par[[i]][j] <- par_old_tmp + eps_tmp
-          fn_val_eps <- do.call(what = fn, args = fn_args)
-          out[, marginal_par_ind[[i]][j]] <- (fn_val_eps - fn_val) / eps_tmp
+          fn_plus <- do.call(what = fn, args = fn_args)
+          # minus
+          fn_args$object$marginal_par[[i]][j] <- par_old_tmp - eps_tmp
+          fn_minus <- do.call(what = fn, args = fn_args)
+          # derivative
+          out[, marginal_par_ind[[i]][j]] <- (fn_plus - fn_minus) / 
+                                             (2 * eps_tmp)
+          # set initial value
           fn_args$object$marginal_par[[i]][j] <- par_old_tmp
         }
       }
@@ -140,15 +187,24 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
       {
         for (t in 1:length(object$coef2[[i]][j, ]))
         {
+          # save initial value
           par_old_tmp <- object$coef2[[i]][j, t] 
+          # prepare increment
           eps_tmp <- eps * abs(par_old_tmp)
+          # plus
           fn_args$object$coef2[[i]][j, t] <- par_old_tmp + eps_tmp
-          fn_val_eps <- do.call(what = fn, args = fn_args)
-          out[, coef2_ind[[i]][j, t]] <- (fn_val_eps - fn_val) / eps_tmp
+          fn_plus <- do.call(what = fn, args = fn_args)
+          # minus
+          fn_args$object$coef2[[i]][j, t] <- par_old_tmp - eps_tmp
+          fn_minus <- do.call(what = fn, args = fn_args)
+          # derivative
+          out[, coef2_ind[[i]][j, t]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+          # names
           colnames(out)[coef2_ind[[i]][j, t]] <- paste0("coef2(", 
                                                         j - 1, ",", 
                                                         t, ")", " of ",
                                                         object$other$y_names[i])
+          # set initial value
           fn_args$object$coef2[[i]][j, t] <- par_old_tmp
         }
       }
@@ -160,14 +216,23 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
     {
       for (j in 1:n_regimes[i])
       {
+        # save initial value
         par_old_tmp <- object$var2[[i]][j] 
+        # prepare increment
         eps_tmp <- eps * abs(par_old_tmp)
+        # plus
         fn_args$object$var2[[i]][j] <- par_old_tmp + eps_tmp
-        fn_val_eps <- do.call(what = fn, args = fn_args)
-        out[, var2_ind[[i]][j]] <- (fn_val_eps - fn_val) / eps_tmp
+        fn_plus <- do.call(what = fn, args = fn_args)
+        # plus
+        fn_args$object$var2[[i]][j] <- par_old_tmp - eps_tmp
+        fn_minus <- do.call(what = fn, args = fn_args)
+        # derivative
+        out[, var2_ind[[i]][j]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+        # names
         colnames(out)[var2_ind[[i]][j]] <- paste0("var(", 
                                                    object$other$y_names[i],
                                                    ")", j - 1)
+        # set initial value
         fn_args$object$var2[[i]][j] <- par_old_tmp
       }
     }
@@ -181,16 +246,25 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
       {
         for (t in 1:n_eq)
         {
+          # save initial value
           par_old_tmp <- object$cov2[[i]][j, t] 
+          # prepare increment
           eps_tmp <- eps * abs(par_old_tmp)
+          # plus
           fn_args$object$cov2[[i]][j, t] <- par_old_tmp + eps_tmp
-          fn_val_eps <- do.call(what = fn, args = fn_args)
-          out[, cov2_ind[[i]][j, t]] <- (fn_val_eps - fn_val) / eps_tmp
+          fn_plus <- do.call(what = fn, args = fn_args)
+          # minus
+          fn_args$object$cov2[[i]][j, t] <- par_old_tmp - eps_tmp
+          fn_minus <- do.call(what = fn, args = fn_args)
+          # derivative
+          out[, cov2_ind[[i]][j, t]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+          # names
           colnames(out)[cov2_ind[[i]][j, t]] <- paste0("cov(", 
                                                         object$other$y_names[i],
                                                         "(", j, ")", ",", 
                                                         object$other$z_names[t],
                                                         ")")
+          # set initial value
           fn_args$object$cov2[[i]][j, t] <- par_old_tmp
         }
       }
@@ -209,12 +283,21 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
         {
           for (t in 1:nrow(regimes_pair[[counter]]))
           {
-              par_old_tmp <- object$sigma2[[counter]][t]
-              eps_tmp <- eps * abs(par_old_tmp)
-              fn_args$object$sigma2[[counter]][t] <- par_old_tmp + eps_tmp
-              fn_val_eps <- do.call(what = fn, args = fn_args)
-              out[, sigma2_ind[[counter]][t]] <- (fn_val_eps - fn_val) / eps_tmp
-              colnames(out)[sigma2_ind[[counter]]] <- paste0(
+            # save initial value
+            par_old_tmp <- object$sigma2[[counter]][t]
+            # prepare increment
+            eps_tmp <- eps * abs(par_old_tmp)
+            # plus
+            fn_args$object$sigma2[[counter]][t] <- par_old_tmp + eps_tmp
+            fn_plus <- do.call(what = fn, args = fn_args)
+            # minus
+            fn_args$object$sigma2[[counter]][t] <- par_old_tmp - eps_tmp
+            fn_minus <- do.call(what = fn, args = fn_args)
+            # derivative
+            out[, sigma2_ind[[counter]][t]] <- (fn_plus - fn_minus) / 
+                                               (2 * eps_tmp)
+            # names
+            colnames(out)[sigma2_ind[[counter]]] <- paste0(
                 "cov(",
                  object$other$y_names[i],
                  "(",
@@ -225,7 +308,8 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
                  ")",
                  object$other$y_names[j],
                  ")")
-              fn_args$object$sigma2[[counter]][t] <- par_old_tmp
+            # set initial value
+            fn_args$object$sigma2[[counter]][t] <- par_old_tmp
           }
           counter <- counter + 1
         }
@@ -238,7 +322,7 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
   {
     return(out)
   }
-  
+
   out <- list(grad = out, val = fn_val)
 
   return(out)
@@ -251,7 +335,7 @@ deriv_mvoprobit <- function(object, fn, fn_args = list(),
 # Differentiate function respect to parameters
 # estimated via mnprobit function
 deriv_mnprobit <- function(object, fn, fn_args = list(), 
-                           eps = sqrt(.Machine$double.eps) * 10,
+                           eps = max(1e-4, sqrt(.Machine$double.eps) * 10),
                            type = "default")
 {
   # Get some variables
@@ -281,12 +365,21 @@ deriv_mnprobit <- function(object, fn, fn_args = list(),
   {
     for (j in 1:n_coef)
     {
+      # save initial value
       par_old_tmp <- object$coef[j, i] 
+      # prepare increment
       eps_tmp <- eps * abs(par_old_tmp)
+      # plus
       fn_args$object$coef[j, i] <- par_old_tmp + eps_tmp
-      fn_val_eps <- do.call(what = fn, args = fn_args)
-      out[, coef_ind_alt[j, i]] <- (fn_val_eps - fn_val) / eps_tmp
+      fn_plus <- do.call(what = fn, args = fn_args)
+      # plus
+      fn_args$object$coef[j, i] <- par_old_tmp - eps_tmp
+      fn_minus <- do.call(what = fn, args = fn_args)
+      # derivative
+      out[, coef_ind_alt[j, i]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+      # names
       colnames(out)[coef_ind_alt[j, i]] <- paste0("coef(", i, ",", j, ")")
+      # set initial value
       fn_args$object$coef[j, i] <- par_old_tmp
     }
   }
@@ -303,15 +396,26 @@ deriv_mnprobit <- function(object, fn, fn_args = list(),
       {
         if (!((i == 1) & (j == 1)))
         {
+          # save initial value
           par_old_tmp <- object$sigma[i, j]
+          # prepare increment
           eps_tmp <- eps * abs(par_old_tmp)
+          # plus
           fn_args$object$sigma[i, j] <- par_old_tmp + eps_tmp
           fn_args$object$sigma[j, i] <- fn_args$object$sigma[j, i]
-          fn_val_eps <- do.call(what = fn, args = fn_args)
-          out[, sigma_ind[counter]] <- (fn_val_eps - fn_val) / eps_tmp
+          fn_plus <- do.call(what = fn, args = fn_args)
+          # minus
+          fn_args$object$sigma[i, j] <- par_old_tmp - eps_tmp
+          fn_args$object$sigma[j, i] <- fn_args$object$sigma[j, i]
+          fn_minus <- do.call(what = fn, args = fn_args)
+          # derivative
+          out[, sigma_ind[counter]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+          # names
+          colnames(out)[sigma_ind[counter]] <- paste0("cov(", i, ",", j, ")")
+          # set initial value
           fn_args$object$sigma[i, j] <- par_old_tmp
           fn_args$object$sigma[j, i] <- par_old_tmp
-          colnames(out)[sigma_ind[counter]] <- paste0("cov(", i, ",", j, ")")
+          # counter
           counter <- counter + 1
         }
       }
@@ -331,13 +435,22 @@ deriv_mnprobit <- function(object, fn, fn_args = list(),
     {
       for (j in 1:n_coef)
       {
+        # save initial value
         par_old_tmp <- object$coef2[j, i] 
+        # prepare increment
         eps_tmp <- eps * abs(par_old_tmp)
+        # plus
         fn_args$object$coef2[j, i] <- par_old_tmp + eps_tmp
-        fn_val_eps <- do.call(what = fn, args = fn_args)
-        out[, coef2_ind_regimes[j, i]] <- (fn_val_eps - fn_val) / eps_tmp
+        fn_plus <- do.call(what = fn, args = fn_args)
+        # minus
+        fn_args$object$coef2[j, i] <- par_old_tmp - eps_tmp
+        fn_minus <- do.call(what = fn, args = fn_args)
+        # derivative
+        out[, coef2_ind_regimes[j, i]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+        # names
         colnames(out)[coef2_ind_regimes[j, i]] <- paste0("coef2(", i, 
                                                          ",", j, ")")
+        # set initial value
         fn_args$object$coef2[j, i] <- par_old_tmp
       }
     }
@@ -345,12 +458,21 @@ deriv_mnprobit <- function(object, fn, fn_args = list(),
     var2_ind_regime <- object$control_lnL$var2_ind_regime + 1
     for (i in 1:n_regimes)
     {
+      # save initial value
       par_old_tmp <- object$var2[i] 
+      # prepare increment
       eps_tmp <- eps * abs(par_old_tmp)
+      # plus
       fn_args$object$var2[i] <- par_old_tmp + eps_tmp
-      fn_val_eps <- do.call(what = fn, args = fn_args)
-      out[, var2_ind_regime[i]] <- (fn_val_eps - fn_val) / eps_tmp
+      fn_plus <- do.call(what = fn, args = fn_args)
+      # minus
+      fn_args$object$var2[i] <- par_old_tmp - eps_tmp
+      fn_minus <- do.call(what = fn, args = fn_args)
+      # derivative
+      out[, var2_ind_regime[i]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+      # names
       colnames(out)[var2_ind_regime[i]] <- paste0("var(", i - 1, ")")
+      # set initial value
       fn_args$object$var2[i] <- par_old_tmp
     }
 
@@ -361,15 +483,24 @@ deriv_mnprobit <- function(object, fn, fn_args = list(),
     {
       for (j in 1:(n_alt - 1))
       {
-        
+        # save initial value
         par_old_tmp <- object$cov2[j, i] 
+        # prepare increment
         eps_tmp <- eps * abs(par_old_tmp)
+        # plus
         fn_args$object$cov2[j, i] <- par_old_tmp + eps_tmp
         fn_args$object$coef_lambda[[i]][[j]] <- fn_args$object$cov2[j, i]
-        fn_val_eps <- do.call(what = fn, args = fn_args)
-        out[, cov2_ind_regime[j, i]] <- (fn_val_eps - fn_val) / eps_tmp
+        fn_plus <- do.call(what = fn, args = fn_args)
+        # minus
+        fn_args$object$cov2[j, i] <- par_old_tmp - eps_tmp
+        fn_args$object$coef_lambda[[i]][[j]] <- fn_args$object$cov2[j, i]
+        fn_minus <- do.call(what = fn, args = fn_args)
+        # derivative
+        out[, cov2_ind_regime[j, i]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+        # names
         colnames(out)[cov2_ind_regime[j, i]] <- paste0("cov2(", i - 1, 
                                                         ",", j, ")")
+        # set initial value
         fn_args$object$cov2[j, i] <- par_old_tmp
         fn_args$object$coef_lambda[[i]][[j]] <- par_old_tmp
       }
@@ -381,7 +512,7 @@ deriv_mnprobit <- function(object, fn, fn_args = list(),
   {
     return(out)
   }
-  
+
   out <- list(grad = out, val = fn_val)
   
   return(out)
@@ -435,7 +566,8 @@ deriv_mnprobit <- function(object, fn, fn_args = list(),
 #' \code{\link[switchSelection]{summary.delta_method}}.
 #' @template delta_method_examples_Template
 delta_method <- function(object, fn, fn_args = list(), 
-                        eps = sqrt(.Machine$double.eps) * 10, cl = 0.95)
+                        eps = max(1e-4, sqrt(.Machine$double.eps) * 10), 
+                        cl = 0.95)
 {
   if (object$estimator != "ml")
   {
