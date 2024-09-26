@@ -1,7 +1,7 @@
 # Optimization routine
 opt_switchSelection <- function(opt_args = NULL, control_lnL,
                                 n_sim = 1000, n_cores = 1,
-                                type = "mvoprobit", start, 
+                                type = "msel", start, 
                                 opt_type = "optim", regularization = NULL)
 {
   # Adjustment for Rcpp code
@@ -29,16 +29,8 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
     
   # obligatory arguments
   optim_args$par <- start
-  if (type == "mvoprobit")
-  {
-    optim_args$fn <- lnL_mvoprobit
-    optim_args$gr <- grad_mvoprobit
-  }
-  if (type == "mnprobit")
-  {
-    optim_args$fn <- lnL_mnprobit
-    optim_args$gr <- grad_mnprobit
-  }
+  optim_args$fn  <- lnL_msel
+  optim_args$gr  <- grad_msel
     
   # technical arguments
   if (!hasName(optim_args, "method"))
@@ -76,16 +68,8 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
     }
       
     # obligatory arguments
-    if (type == "mvoprobit")
-    {
-      gena_args$fn <- lnL_mvoprobit
-      gena_args$gr <- grad_mvoprobit
-    }
-    if (type == "mnprobit")
-    {
-      gena_args$fn <- lnL_mnprobit
-      gena_args$gr <- grad_mnprobit
-    }
+    gena_args$fn <- lnL_msel
+    gena_args$gr <- grad_msel
       
     # technical arguments
     if (!hasName(gena_args, "pop.initial"))
@@ -138,16 +122,9 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
     }
       
     # obligatory arguments
-    if (type == "mvoprobit")
-    {
-      pso_args$fn <- lnL_mvoprobit
-      pso_args$gr <- grad_mvoprobit
-    }
-    if (type == "mnprobit")
-    {
-      pso_args$fn <- lnL_mnprobit
-      pso_args$gr <- grad_mnprobit
-    }
+    if (type == "msel")
+    pso_args$fn <- lnL_msel
+    pso_args$gr <- grad_msel
       
     # technical arguments
     if (!hasName(pso_args, "pop.initial"))

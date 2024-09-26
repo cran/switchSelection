@@ -6,30 +6,44 @@
 #' @docType data
 #'
 #' @format
-#' A data frame with 18,253 rows and 13 columns. It contains information on
-#' wages and some socio-demographic characteristics of middle age
+#' A data frame with 18,253 rows and 23 columns. It contains information on
+#' wages and some socio-demographic characteristics of the middle age
 #' (25-54 years) married women:
 #' \describe{
-#'   \item{age}{age of individual measured in years.}
-#'   \item{lwage}{logarithm of hourly wage.}
-#'   \item{slwage}{logarithm of hourly wage of a spouse.}
-#'   \item{work}{binary variable for employment status 
+#'   \item{age}{the age measured in years.}
+#'   \item{sage}{the same as age but for a spouse.}
+#'   \item{work}{a binary variable for the employment status 
 #'   (0 - unemployed, 1 - employed).}
-#'   \item{swork}{binary variable for employment status 
-#'   of a spouse (0 - unemployed, 1 - employed).}
+#'   \item{swork}{the same as work but for a spouse.}
 #'   \item{nchild}{the number of children under age 5.}
-#'   \item{health}{subjective health status (1 - poor, 2 - fair, 3 - good, 
-#'   4 - very good, 5 - excellent).}
-#'   \item{basic}{binary variable which equals 1 for those who have graduated 
+#'   \item{snchild}{the same as nchild but for a spouse.}
+#'   \item{health}{subjective health status 
+#'   (1 - poor, 2 - fair, 3 - good, 4 - very good, 5 - excellent).}
+#'   \item{shealth}{the same as health but for a spouse.}
+#'   \item{basic}{a binary variable which equals 1 for those who have graduated 
 #'   from high school or has at least some college or has associated degree and 
 #'   does not have any higher level of education, 0 - otherwise.}
-#'   \item{bachelor}{binary variable which equals 1 for those whose highest 
+#'   \item{bachelor}{a binary variable which equals 1 for those whose highest 
 #'   education level is a bachelor degree.}
-#'   \item{master}{binary variable which equals 1 for those whose highest 
+#'   \item{master}{a binary variable which equals 1 for those whose highest 
 #'   education level is a master degree.}
 #'   \item{sbasic}{the same as basic but for a spouse.}
 #'   \item{sbachelor}{the same as bachelor but for a spouse.}
 #'   \item{smaster}{the same as master but for a spouse.} 
+#'   \item{educ}{a categorical variable for the level of education such that 
+#'   educ = 0 if basic = 1, 
+#'   educ = 1 if bachelor = 1 and 
+#'   educ = 2 if master = 1.}
+#'   \item{seduc}{the same as educ but for a spouse.}
+#'   \item{weeks}{a total number of weeks worked durning the year.}
+#'   \item{sweeks}{the same as weeks but for a spouse.}
+#'   \item{hours}{a usual number of working hours per week.}
+#'   \item{shours}{the same as hours but for a spouse.}
+#'   \item{wage}{the wage of the individual.}
+#'   \item{swage}{the same as wage but for a spouse.}
+#'   \item{lwage}{an inverse hyperbolic sine transformation of the hourly wage.}
+#'   \item{slwage}{the same as lwage but for a spouse.}
+#'   \item{state}{a state of residence.}
 #'   ...
 #' }
 #' @usage data(cps)
@@ -41,7 +55,7 @@
 #' @examples
 #' \donttest{
 #' data(cps)
-#' model <- mvoprobit(work ~ age + bachelor + master, data = cps)
+#' model <- msel(work ~ age + bachelor + master, data = cps)
 #' summary(model)
 #' } 
 "cps"

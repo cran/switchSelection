@@ -6,7 +6,7 @@ regularization_validate <- function(regularization = NULL,
   # -----------------------------------------------------------
   
   # Return if NULL
-  if (is.null(regularization))
+  if (is.null(regularization) | (length(regularization) == 0))
   {
     return (NULL)
   }

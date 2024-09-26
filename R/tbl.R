@@ -1,19 +1,60 @@
-# Create output tables mvoprobit
-tbl_mvoprobit <- function(par, cov, 
-                          n_par, n_eq, n_eq2, n_cuts_eq,
-                          n_regimes, regimes_pair,
-                          coef, coef_ind,
-                          coef_var, coef_var_ind,
-                          cuts, cuts_ind,
-                          sigma, sigma_ind, sigma_vec_ind,
-                          coef2, coef2_ind,
-                          var2, var2_ind,
-                          cov2, cov2_ind,
-                          sigma2, sigma2_ind,
-                          marginal_par, marginal_par_ind, marginal_par_n,
-                          is_marginal, is_het, z_names, y_names,
-                          estimator, coef_lambda_row, cov_2step)
+# Create output tables msel
+tbl_msel <- function(object, par = NULL, vcov = NULL)
 {
+  # Get some variables
+  if (!is.null(par))
+  {
+    object <- par_msel(object = object, par = par, type = "object")
+  }
+  if (!is.null(vcov))
+  {
+    object$cov <- vcov
+  }
+  par              <- object$par
+  cov              <- object$cov
+  n_par            <- object$other$n_par
+  estimator        <- object$estimator
+  is1              <- object$other$is1
+  is2              <- object$other$is2
+  is3              <- object$other$is3
+  is_het           <- object$other$is_het
+  n_eq             <- object$other$n_eq
+  n_eq2            <- object$other$n_eq2
+  n_eq3            <- object$other$n_eq3
+  n_cuts_eq        <- object$other$n_cuts_eq
+  n_regimes        <- object$other$n_regimes
+  regimes_pair     <- object$other$regimes_pair
+  coef             <- object$coef
+  coef_var         <- object$coef_var
+  cuts             <- object$cuts
+  sigma            <- object$sigma
+  coef2            <- object$coef2
+  var2             <- object$var2
+  cov2             <- object$cov2
+  sigma2           <- object$sigma2
+  sigma3           <- object$sigma3
+  marginal_par     <- object$marginal_par
+  coef3            <- object$coef3
+  coef_ind         <- object$ind$coef
+  coef_var_ind     <- object$ind$coef_var
+  cuts_ind         <- object$ind$cuts 
+  sigma_ind        <- object$ind$sigma
+  sigma_vec_ind    <- object$other$sigma_vec_ind
+  coef2_ind        <- object$ind$coef2
+  var2_ind         <- object$ind$var2
+  cov2_ind         <- object$ind$cov2
+  sigma2_ind       <- object$ind$sigma2
+  sigma3_ind       <- object$ind$sigma3
+  sigma3_ind_mat   <- object$ind$sigma3_mat
+  marginal_par_ind <- object$ind$marginal_par
+  marginal_par_n   <- object$other$marginal_par_n
+  coef3_ind        <- object$ind$coef3
+  is_marginal      <- object$other$is_marginal
+  z_names          <- object$other$z_names
+  y_names          <- object$other$y_names
+  type3            <- object$type3
+  coef_lambda_ind  <- object$other$coef_lambda_ind
+  
   # Calculate standard errors
   se <- sqrt(diag(cov))
   
@@ -26,80 +67,82 @@ tbl_mvoprobit <- function(par, cov,
   }
   
   # Construct output table
-  tbl_coef <- vector(mode = "list", length = n_eq)
-  tbl_coef_var <- vector(mode = "list", length = n_eq)
-  tbl_cuts <- vector(mode = "list", length = n_eq)
-  tbl_sigma <- vector(mode = "list", length = 1)
-  tbl_coef2 <- NULL
-  tbl_var2 <- NULL
-  tbl_cov2 <- NULL
-  tbl_sigma2 <- NULL
+  tbl_coef         <- vector(mode = "list", length = n_eq)
+  tbl_coef_var     <- vector(mode = "list", length = n_eq)
+  tbl_cuts         <- vector(mode = "list", length = n_eq)
+  tbl_sigma        <- vector(mode = "list", length = 1)
+  tbl_coef2        <- vector(mode = "list", length = n_eq2)
+  tbl_lambda       <- vector(mode = "list", length = n_eq2)
+  tbl_var2         <- vector(mode = "list", length = n_eq2)
+  tbl_cov2         <- vector(mode = "list", length = n_eq2)
+  tbl_sigma2       <- vector(mode = "list", length = n_eq2 * (n_eq2 - 1) / 2)
   tbl_marginal_par <- NULL
-  tbl_lambda <- NULL
-  if (n_eq2 > 0)
-  {
-    tbl_coef2 <- vector(mode = "list", length = n_eq2)
-    tbl_var2 <- vector(mode = "list", length = n_eq2)
-    tbl_cov2 <- vector(mode = "list", length = n_eq2)
-    tbl_sigma2 <- vector(mode = "list", length = n_eq2 * (n_eq2 - 1) / 2)
-  }
+  tbl_coef3        <- NULL
+  tbl_sigma3       <- NULL
   
   # Ordered equations
-  for (i in 1:n_eq)
+  if (is1)
   {
-    # coefficients of the mean equation
-    tbl_coef[[i]] <- as.matrix(cbind(Estimate = coef[[i]],
-                                     Std_Error = se[coef_ind[[i]]],
-                                     z_value = z_value[coef_ind[[i]]],
-                                     ind = coef_ind[[i]],
-                                     p_value = p_value[coef_ind[[i]]]))
-    rownames(tbl_coef[[i]]) <- names(coef[[i]])
-    names(tbl_coef) <- z_names
-    
-    # coefficients of the variance equation
-    if (is_het[i])
+    for (i in 1:n_eq)
     {
-      tbl_coef_var[[i]] <- as.matrix(cbind(Estimate = coef_var[[i]],
-                                           Std_Error = se[coef_var_ind[[i]]],
-                                           z_value = z_value[coef_var_ind[[i]]],
-                                           ind = coef_var_ind[[i]],
-                                           p_value = p_value[coef_var_ind[[i]]]))
-      rownames(tbl_coef_var[[i]]) <- names(coef_var[[i]])
+      # coefficients of the mean equation
+      tbl_coef[[i]] <- as.matrix(cbind(Estimate = coef[[i]],
+                                       Std_Error = se[coef_ind[[i]]],
+                                       z_value = z_value[coef_ind[[i]]],
+                                       ind = coef_ind[[i]],
+                                       p_value = p_value[coef_ind[[i]]]))
+      rownames(tbl_coef[[i]]) <- names(coef[[i]])
+      names(tbl_coef) <- z_names
+      
+      # coefficients of the variance equation
+      if (is_het[i])
+      {
+        tbl_coef_var[[i]] <- as.matrix(cbind(Estimate = coef_var[[i]],
+                                             Std_Error = se[coef_var_ind[[i]]],
+                                             z_value = z_value[coef_var_ind[[i]]],
+                                             ind = coef_var_ind[[i]],
+                                             p_value = p_value[coef_var_ind[[i]]]))
+        rownames(tbl_coef_var[[i]]) <- names(coef_var[[i]])
+      }
+      names(tbl_coef_var) <- z_names
+      
+      # cuts
+      tbl_cuts[[i]] <- as.matrix(cbind(Estimate = cuts[[i]],
+                                       Std_Error = se[cuts_ind[[i]]],
+                                       z_value = z_value[cuts_ind[[i]]],
+                                       ind = cuts_ind[[i]],
+                                       p_value = p_value[cuts_ind[[i]]]))
+      rownames(tbl_cuts[[i]]) <- paste0("cut", 1:n_cuts_eq[i])
     }
-    names(tbl_coef_var) <- z_names
-    
-    # cuts
-    tbl_cuts[[i]] <- as.matrix(cbind(Estimate = cuts[[i]],
-                                     Std_Error = se[cuts_ind[[i]]],
-                                     z_value = z_value[cuts_ind[[i]]],
-                                     ind = cuts_ind[[i]],
-                                     p_value = p_value[cuts_ind[[i]]]))
-    rownames(tbl_cuts[[i]]) <- paste0("cut", 1:n_cuts_eq[i])
   }
   
   # covariance matrix of ordered equations
   tbl_sigma <- NULL
-  if (n_eq >= 2)
+  if (is1)
   {
-    sigma_vec_names <- paste0("cov(", 
-                              z_names[sigma_vec_ind[, 1, drop = FALSE]], ", ",
-                              z_names[sigma_vec_ind[, 2, drop = FALSE]],
-                              ")")
-    tbl_sigma <- as.matrix(cbind(Estimate = par[sigma_ind],
-                                 Std_Error = se[sigma_ind],
-                                 z_value = z_value[sigma_ind],
-                                 ind = sigma_ind,
-                                 p_value = p_value[sigma_ind]))
-    rownames(tbl_sigma) <- sigma_vec_names
+    if (n_eq >= 2)
+    {
+      sigma_vec_names <- paste0("cov(", 
+                                z_names[sigma_vec_ind[, 1, drop = FALSE]], ", ",
+                                z_names[sigma_vec_ind[, 2, drop = FALSE]],
+                                ")")
+      tbl_sigma <- as.matrix(cbind(Estimate = par[sigma_ind],
+                                   Std_Error = se[sigma_ind],
+                                   z_value = z_value[sigma_ind],
+                                   ind = sigma_ind,
+                                   p_value = p_value[sigma_ind]))
+      rownames(tbl_sigma) <- sigma_vec_names
+    }
   }
   
   # Continuous equations
-  if (n_eq2 > 0)
+  if (is2)
   {
     for (i in 1:n_eq2)
     {
-      tbl_coef2[[i]] <- vector(mode = "list", length = n_regimes[i])
-      tbl_cov2[[i]] <- vector(mode = "list", length = n_regimes[i])
+      tbl_coef2[[i]]  <- vector(mode = "list", length = n_regimes[i])
+      tbl_lambda[[i]] <- vector(mode = "list", length = n_regimes[i])
+      tbl_cov2[[i]]   <- vector(mode = "list", length = n_regimes[i])
       for (j in 1:n_regimes[i])
       {
         # coefficients
@@ -110,28 +153,44 @@ tbl_mvoprobit <- function(par, cov,
                                                p_value = p_value[coef2_ind[[i]][j, ]]))
         rownames(tbl_coef2[[i]][[j]]) <- names(coef2[[i]][j, ])
         names(tbl_coef2[[i]]) <- paste0("regime ", 0:(n_regimes[i] - 1))
+        if ((estimator == "2step"))
+        {
+          if (length(coef_lambda_ind[[i]]) > 0)
+          {
+            tbl_lambda[[i]][[j]] <- tbl_coef2[[i]][[j]][coef_lambda_ind[[i]], ,
+                                                        drop = FALSE]
+            tbl_coef2[[i]][[j]]  <- tbl_coef2[[i]][[j]][-coef_lambda_ind[[i]], ,
+                                                        drop = FALSE]
+          }
+        }
         
         # covariances with ordered equations
-        tbl_cov2[[i]][[j]] <- as.matrix(cbind(Estimate = cov2[[i]][j, ],
-                                               Std_Error = se[cov2_ind[[i]][j, ]],
-                                               z_value = z_value[cov2_ind[[i]][j, ]],
-                                               ind = cov2_ind[[i]][j, ],
-                                               p_value = p_value[cov2_ind[[i]][j, ]]))
-        rownames(tbl_cov2[[i]][[j]]) <- z_names
-        names(tbl_coef2[[i]]) <- paste0("regime ", 0:(n_regimes[i] - 1))
+        if (is1 & (estimator == "ml"))
+        {
+          tbl_cov2[[i]][[j]] <- as.matrix(cbind(Estimate = cov2[[i]][j, ],
+                                                 Std_Error = se[cov2_ind[[i]][j, ]],
+                                                 z_value = z_value[cov2_ind[[i]][j, ]],
+                                                 ind = cov2_ind[[i]][j, ],
+                                                 p_value = p_value[cov2_ind[[i]][j, ]]))
+          rownames(tbl_cov2[[i]][[j]]) <- z_names
+          names(tbl_coef2[[i]]) <- paste0("regime ", 0:(n_regimes[i] - 1))
+        }
       }
-      tbl_var2[[i]] <- as.matrix(cbind(Estimate = var2[[i]],
-                                        Std_Error = se[var2_ind[[i]]],
-                                        z_value = z_value[var2_ind[[i]]],
-                                        ind = var2_ind[[i]],
-                                        p_value = p_value[var2_ind[[i]]]))
-      rownames(tbl_var2[[i]]) <- rep("var", n_regimes[i])
+      if (estimator != "2step")
+      {
+        tbl_var2[[i]] <- as.matrix(cbind(Estimate = var2[[i]],
+                                          Std_Error = se[var2_ind[[i]]],
+                                          z_value = z_value[var2_ind[[i]]],
+                                          ind = var2_ind[[i]],
+                                          p_value = p_value[var2_ind[[i]]]))
+        rownames(tbl_var2[[i]]) <- rep("var", n_regimes[i])
+      }
     }
     names(tbl_coef2) <- paste0("Equation ", 1:n_eq2)
   }
   
   # Covariances between continuous equations
-  if (n_eq2 >= 2)
+  if ((n_eq2 >= 2) & (estimator == "ml"))
   {
     counter <- 1
     for (i in 2:n_eq2)
@@ -145,20 +204,23 @@ tbl_mvoprobit <- function(par, cov,
                                                  p_value = p_value[sigma2_ind[[counter]]]))
         names(tbl_sigma2)[counter] <- paste0(y_names[i], " and ", y_names[j])
         rownames(tbl_sigma2[[counter]]) <- rep("", nrow(tbl_sigma2[[counter]]))
-        for (t in 1:nrow(regimes_pair[[counter]]))
+        if (length(regimes_pair[[counter]]) > 0)
         {
-          rownames(tbl_sigma2[[counter]])[t] <- paste0("(",
-                                                       regimes_pair[[counter]][t, 1], 
-                                                       ",",
-                                                       regimes_pair[[counter]][t, 2],
-                                                       ")")
+          for (t in 1:nrow(regimes_pair[[counter]]))
+          {
+            rownames(tbl_sigma2[[counter]])[t] <- paste0("(",
+                                                         regimes_pair[[counter]][t, 1], 
+                                                         ",",
+                                                         regimes_pair[[counter]][t, 2],
+                                                         ")")
+          }
         }
         counter <- counter + 1
       }
     }
   }
   
-  # Parameters of marginal distribution
+  # Parameters of the marginal distributions
   if (is_marginal)
   {
     tbl_marginal_par <- vector(mode = "list", length = n_eq)
@@ -178,173 +240,49 @@ tbl_mvoprobit <- function(par, cov,
     }
   }
   
-  # Standard errors of coefficients of lambdas
-  if (estimator == "2step")
+  # Coefficients of the multinomial equations
+  if (is3)
   {
-    tbl_lambda <- vector(mode = "list", length = n_regimes[1])
-    for (i in 1:n_regimes[1])
+    tbl_coef3        <- vector(mode = "list", length = n_eq3 - 1)
+    names(tbl_coef3) <- paste0("Alternative ", 1:(n_eq3 - 1))
+    for (i in 1:(n_eq3 - 1))
     {
-      n_coef2_tmp <- length(coef2_ind[[1]][i, ])
-      estimate_lambda <- coef_lambda_row[[i]]
-      se_lambda <- sqrt(diag(cov_2step[[i]][-(1:n_coef2_tmp), 
-                                            -(1:n_coef2_tmp), 
-                                            drop = FALSE]))
-      z_lambda <- estimate_lambda / se_lambda
-      n_lambda <- length(estimate_lambda)
-      p_value_lambda <- rep(NA, n_lambda)
-      for (j in 1:n_lambda)
-      {
-        p_value_lambda[j] <- 2 * min(pnorm(z_lambda[j]), 1 - pnorm(z_lambda[j]))
-      }
-      tbl_lambda[[i]] <- as.matrix(cbind(Estimate = estimate_lambda,
-                                         Std_Error = se_lambda,
-                                         z_value = z_lambda,
-                                         p_value = p_value_lambda))
-      rownames(tbl_lambda[[i]]) <- names(estimate_lambda)
+      tbl_coef3[[i]] <- as.matrix(cbind(Estimate = coef3[i, ],
+                                        Std_Error = se[coef3_ind[i, ]],
+                                        z_value = z_value[coef3_ind[i, ]],
+                                        ind = coef3_ind[i, ],
+                                        p_value = p_value[coef3_ind[i, ]]))
     }
-    names(tbl_lambda) <- paste0("regime ", 0:(n_regimes[1] - 1))
+  }
+  
+  # Covariances of the multinomial equations
+  if (is3 & (n_eq3 > 2) & (type3 == "probit"))
+  {
+    sigma3_vec_names     <- paste0("cov(", sigma3_ind_mat[, 1, drop = FALSE], 
+                                   ",",
+                                   sigma3_ind_mat[, 2, drop = FALSE],
+                                   ")")
+    tbl_sigma3           <- as.matrix(cbind(Estimate  = par[sigma3_ind],
+                                            Std_Error = se[sigma3_ind],
+                                            z_value   = z_value[sigma3_ind],
+                                            ind       = sigma3_ind,
+                                            p_value   = p_value[sigma3_ind]))
+    rownames(tbl_sigma3) <- sigma3_vec_names
   }
   
   # Aggregate the results into the table
-  tbl <- list(coef = tbl_coef,
-              coef_var = tbl_coef_var,
-              cuts = tbl_cuts,
-              sigma = tbl_sigma,
-              coef2 = tbl_coef2,
-              var2 = tbl_var2,
-              cov2 = tbl_cov2,
-              sigma2 = tbl_sigma2,
+  tbl <- list(coef         = tbl_coef,
+              coef_var     = tbl_coef_var,
+              cuts         = tbl_cuts,
+              sigma        = tbl_sigma,
+              coef2        = tbl_coef2,
+              lambda       = tbl_lambda,
+              var2         = tbl_var2,
+              cov2         = tbl_cov2,
+              sigma2       = tbl_sigma2,
               marginal_par = tbl_marginal_par,
-              lambda = tbl_lambda)
-  
-  # Store the output
-  out <- list(tbl = tbl, se = se, p_value = p_value)
-  
-  return (out)
-}
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-
-tbl_mnprobit <- function(par, cov, n_par = n_par,
-                         n_alt, n_coef, n_coef2, n_regimes,
-                         coef_ind_alt, sigma_ind, sigma_ind_mat,
-                         coef2_ind_regime, var2_ind_regime, cov2_ind_regime,
-                         alt_names, coef_lambda, is2, degrees, estimator,
-                         cov_2step,
-                         coef, sigma_vec, coef2, var2, cov2,
-                         coef_lambda_row, regimes_names,
-                         colnames_W, colnames_X)
-{
-  # Calculate standard errors 
-  se <- sqrt(diag(cov))
-  
-  # Calculate p-values
-  z_value <- par / se
-  p_value <- rep(NA, n_par)
-  for (i in 1:n_par)
-  {
-    p_value[i] <- 2 * min(pnorm(z_value[i]), 1 - pnorm(z_value[i]))
-  }
-  
-  # Construct output table
-  tbl_coef <- vector(mode = "list", length = n_alt - 1)
-  tbl_sigma <- matrix()
-  tbl_coef2 <- vector(mode = "list", length = n_regimes)
-  tbl_var2 <- vector(mode = "list", length = n_regimes)
-  tbl_cov2 <- vector(mode = "list", length = n_regimes)
-  tbl_lambda <- NULL
-  
-  # Coefficients of the multinomial equation
-  for (i in 1:(n_alt - 1))
-  {
-    tbl_coef[[i]] <- as.matrix(cbind(Estimate = coef[, i],
-                                     Std_Error = se[coef_ind_alt[, i]],
-                                     z_value = z_value[coef_ind_alt[, i]],
-                                     ind = coef_ind_alt[, i],
-                                     p_value = p_value[coef_ind_alt[, i]]))
-    rownames(tbl_coef[[i]]) <- colnames_W
-  }
-  
-  # covariances
-  if (n_alt > 2)
-  {
-    sigma_vec_names <- paste0("cov(", sigma_ind_mat[, 1, drop = FALSE], 
-                              ",",
-                              sigma_ind_mat[, 2, drop = FALSE],
-                              ")")
-    tbl_sigma <- as.matrix(cbind(Estimate = sigma_vec,
-                                 Std_Error = se[sigma_ind],
-                                 z_value = z_value[sigma_ind],
-                                 ind = sigma_ind,
-                                 p_value = p_value[sigma_ind]))
-    rownames(tbl_sigma) <- sigma_vec_names
-  }
-  
-  # Coefficients of the continuous equations
-  if (is2)
-  {
-    for (i in 1:n_regimes)
-    {
-      #coefficients
-      tbl_coef2[[i]] <- as.matrix(cbind(Estimate = coef2[, i],
-                                        Std_Error = se[coef2_ind_regime[, i]],
-                                        z_value = z_value[coef2_ind_regime[, i]],
-                                        ind = coef2_ind_regime[, i],
-                                        p_value = p_value[coef2_ind_regime[, i]]))
-      rownames(tbl_coef2[[i]]) <- colnames_X
-      # variances
-      tbl_var2[[i]] <- as.matrix(cbind(Estimate = var2[i],
-                                       Std_Error = se[var2_ind_regime[i]],
-                                       z_value = z_value[var2_ind_regime[i]],
-                                       ind = var2_ind_regime[i],
-                                       p_value = p_value[var2_ind_regime[i]]))
-      rownames(tbl_var2[[i]]) <- "var"
-      # covariances
-      tbl_cov2[[i]] <- as.matrix(cbind(Estimate = cov2[, i],
-                                       Std_Error = se[cov2_ind_regime[, i]],
-                                       z_value = z_value[cov2_ind_regime[, i]],
-                                       ind = cov2_ind_regime[, i],
-                                       p_value = p_value[cov2_ind_regime[, i]]))
-      rownames(tbl_cov2[[i]]) <- paste0("cov(", 1:(n_alt - 1), ")")
-    }
-  }
-  
-  # Coefficients for lambdas
-  if (estimator == "2step")
-  {
-    tbl_lambda <- vector(mode = "list", length = n_regimes)
-    for (i in 1:n_regimes)
-    {
-      n_coef2_tmp <- length(coef2_ind_regime[, i])
-      estimate_lambda <- coef_lambda_row[[i]]
-      se_lambda <- sqrt(diag(cov_2step[[i]][-(1:n_coef2_tmp), 
-                                            -(1:n_coef2_tmp), 
-                                            drop = FALSE]))
-      z_lambda <- estimate_lambda / se_lambda
-      n_lambda <- length(estimate_lambda)
-      p_value_lambda <- rep(NA, n_lambda)
-      for (j in 1:n_lambda)
-      {
-        p_value_lambda[j] <- 2 * min(pnorm(z_lambda[j]), 1 - pnorm(z_lambda[j]))
-      }
-      tbl_lambda[[i]] <- as.matrix(cbind(Estimate = estimate_lambda,
-                                         Std_Error = se_lambda,
-                                         z_value = z_lambda,
-                                         p_value = p_value_lambda))
-      rownames(tbl_lambda[[i]]) <- names(estimate_lambda)
-    }
-    names(tbl_lambda) <- regimes_names
-  }
-  
-  # Save the tables
-  tbl <- list(coef = tbl_coef,
-              sigma = tbl_sigma,
-              coef2 = tbl_coef2,
-              var2 = tbl_var2,
-              cov2 = tbl_cov2,
-              lambda = tbl_lambda)
+              coef3        = tbl_coef3,
+              sigma3       = tbl_sigma3)
   
   # Store the output
   out <- list(tbl = tbl, se = se, p_value = p_value)

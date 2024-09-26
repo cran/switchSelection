@@ -1,18 +1,23 @@
-#' Coefficients extraction method for mvoprobit.
-#' @description Extract coefficients and other estimates from mvoprobit object.
-#' @param object object of class "mvoprobit".
+#' Coefficients extraction method for msel.
+#' @description Extract coefficients and other estimates from msel object.
+#' @param object an object of class "msel".
 #' @param ... further arguments (currently ignored).
-#' @param eq integer representing an index of the ordered equation.
-#' @param eq2 integer representing an index of the continuous equation.
-#' @param regime integer representing a regime of the continuous equation.
-#' @param type character representing a type of the output. Possible options
-#' are \code{"coef"}, \code{"coef2"}, \code{"cov"}, \code{"cov1"}, \code{"var"},
-#' \code{"cov2"}, \code{"cov3"}, \code{coef_lambda} and \code{marginal}.
+#' @param eq an integer representing the index of the ordered equation.
+#' @param eq2 an integer representing the index of the continuous equation.
+#' @param eq3 an integer representing the index of the alternative of the
+#' multinomial equation.
+#' @param regime an integer representing a regime of the continuous equation.
+#' @param type a character representing a type of the output. Possible options
+#' are \code{"coef"}, \code{"coef2"}, \code{coef_lambda}, 
+#' \code{"coef_var"}, \code{"coef3"}, \code{"cuts"}, \code{"cov"}, 
+#' \code{"cov1"}, \code{"var"}, \code{"cov2"}, \code{"cov3"}, 
+#' and \code{marginal}.
 #' See 'Details' for additional information.
-#' @template coef_mvoprobit_details_Template
+#' @template coef_msel_details_Template
 #' @returns See 'Details' section.
-coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL, 
-                            regime = NULL, type = "coef")
+coef.msel <- function (object, ..., 
+                       eq = NULL, eq2 = NULL, eq3 = NULL,
+                       regime = NULL, type = "coef")
 {
   # Validate dots
   if (length(list(...)) > 0)
@@ -21,14 +26,19 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
   }
   
   # Some variables
-  n_eq <- length(object$coef)
-  n_eq2 <- length(object$coef2)
-  is2 <- hasName(object, "formula2")
-  n_regimes <- object$other$n_regimes
-  z_names = object$other$z_names
-  y_names = object$other$y_names
+  n_eq            <- object$other$n_eq
+  n_eq2           <- object$other$n_eq2
+  n_eq3           <- object$other$n_eq3
+  is1             <- object$other$is1
+  is2             <- object$other$is2
+  is3             <- object$other$is1
+  n_regimes       <- object$other$n_regimes
+  z_names         <- object$other$z_names
+  y_names         <- object$other$y_names
+  estimator       <- object$estimator
+  coef_lambda_ind <- object$other$coef_lambda_ind
   
-  # Validation of type
+  # Validation of the type
   type <- tolower(type)
   if ((type == "coefficients") | (type == "coeff"))
   {
@@ -40,16 +50,21 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     type <- "coef2"
     warning("It is assumed that 'type' is 'coef2'.")
   }
+  if ((type == "lambda") | (type == "coef2_lambda"))
+  {
+    type <- "coef_lambda"
+    warning("It is assumed that 'type' is 'coef_lambda'.")
+  }
+  if ((type == "coefficients3") | (type == "coeff3") |
+      (type == "coef_mn")       | (type == "coef_mult"))
+  {
+    type <- "coef3"
+    warning("It is assumed that 'type' is 'coef3'.")
+  }
   if ((type == "coef") & !is.null(eq2))
   {
     type <- "coef2"
     warning("Since 'eq2' is not 'NULL' it is assumed that 'type' is 'coef2'.")
-  }
-  if ((type == "lambda") | (type == "coefficients_lambda") | 
-      (type == "coeff_lambda") | (type == "lambdas"))
-  {
-    type <- "coef_lambda"
-    warning("It is assumed that 'type' is 'coef_lambda'.")
   }
   if ((type == "coefficients_var") | (type == "coeff_var"))
   {
@@ -61,17 +76,40 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     type <- "marginal"
     warning("It is assumed that 'type' is 'marginal'.")
   }
+  if (type %in% c("cut", "threshold", "thresholds"))
+  {
+    type <- "cuts"
+    warning("It is assumed that 'type' is 'cuts'.")
+  }
+  if (type %in% c("sigma", "sigma1"))
+  {
+    type <- "cov1"
+    warning("It is assumed that 'type' is 'cov1'.")
+  }
+  if (type %in% c("sigma2"))
+  {
+    type <- "cov2"
+    warning("It is assumed that 'type' is 'cov2'.")
+  }
+  if (type %in% c("sigma3"))
+  {
+    type <- "cov3"
+    warning("It is assumed that 'type' is 'cov3'.")
+  }
   
   # Convert eq into numeric if need
-  if (!is.null(eq))
+  if (is1)
   {
-    if (is.character(eq))
+    if (!is.null(eq))
     {
-      eq <- which(z_names %in% eq)
-    }
-    if (any(eq < 1) | any(eq > n_eq))
-    {
-      stop("Incorrect 'eq' value.")
+      if (is.character(eq))
+      {
+        eq <- which(z_names %in% eq)
+      }
+      if (any(eq < 1) | any(eq > n_eq))
+      {
+        stop("Incorrect 'eq' value.")
+      }
     }
   }
   
@@ -91,7 +129,19 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     }
   }
   
-  # Validate regime
+  # Convert eq3 into numeric if need
+  if (is3)
+  {
+    if (!is.null(eq3))
+    {
+      if (any(eq3 < 0) | any(eq3 >= n_eq3))
+      {
+        stop("Incorrect 'eq3' value.")
+      }
+    }
+  }
+  
+  # Validate the regime
   if (is2)
   {
     if (!is.null(regime) & !is.null(eq2))
@@ -103,7 +153,7 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     }
   }
   
-  # Coefficients of the ordered equations
+  # Coefficients of the ordinal equations
   if (type == "coef")
   {
     if (is.null(eq))
@@ -113,12 +163,27 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     return (object$coef[[eq]])
   }
   
-  # Coefficients of continuous equations
-  if (type == "coef2")
+  # Coefficients of the continuous equations
+  if (type %in% c("coef2", "coef_lambda", "coef2_all"))
   {
     if (!is2)
     {
       stop("Available only when there is at least one continuous equation.")
+    }
+    if (estimator == "2step")
+    {
+      if (type != "coef2_all")
+      {
+        for (v in 1:n_eq2)
+        {
+          if (length(coef_lambda_ind[[v]]) > 0)
+          {
+            s                 <- ifelse(type == "coef_lambda", 1, -1)
+            object$coef2[[v]] <- object$coef2[[v]][, s * coef_lambda_ind[[v]],
+                                                     drop = FALSE]
+          }
+        }
+      }
     }
     if (is.null(eq2) & !is.null(regime))
     {
@@ -145,50 +210,35 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     return (object$coef_var[[eq]])
   }
   
-  # Coefficients of selectivity correction terms (lambda)
-  if (type == "coef_lambda")
+  # Cuts
+  if (type == "cuts")
   {
-    if (object$estimator != "2step")
-    {
-      stop("Available only for two-step estimator.")
-    }
-    if ((n_eq2 >= 2) | !is2)
-    {
-      stop("Available only when there is a single continuous equation.")
-    }
-    if (is.null(regime))
-    {
-      return (object$coef_lambda)
-    }
     if (is.null(eq))
     {
-      return (object$coef_lambda[[regime + 1]])
+      return (object$cuts)
     }
-    return (object$coef_lambda[[regime + 1]][[eq]])
+    return (object$cuts[[eq]])
   }
   
-  # Covariances
-  # asymptotic covariance matrix of estimates
+  # Asymptotic covariance matrix of the estimates
   if ((type == "vcov") | (type == "cov"))
   {
     return (object$cov)
   }
-  # covariances between ordered equations
+  
+  # Covariances between the ordinal equations
   if (type == "cov1")
   {
     if (length(eq) > 1)
     {
-      return(object$sigma[eq[1], eq[2]])
+      return(object$sigma[eq[1], eq[2], drop = FALSE])
     }
     return(object$sigma)
   }
-  # covariances between continuous and ordered equations
+  
+  # Covariances between the continuous and ordinal equations
   if (type == "cov12")
   {
-    if (any(object$degrees != 1))
-    {
-      stop("Not available if some 'degrees' are different from 1.")
-    }
     if (!is.null(eq) & !is.null(regime) & is.null(eq2))
     {
       eq2 <- 1
@@ -201,18 +251,19 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     {
       return (object$cov2[[eq2]])
     }
-    return (object$cov2[[eq2]][regime + 1, eq])
+    return (object$cov2[[eq2]][regime + 1, eq, drop = FALSE])
   }
-  # variances of continuous equations
-  if ((type == "var") | (type == "cov2") | (type == "variance"))
+  
+  # Variances of the continuous equations
+  if ((type == "var") | (type == "variance"))
   {
     if (!is2)
     {
-      stop("Available only when there is a continous equation.")
+      stop("Available only when there is a continous equation.\n")
     }
-    if (any(object$degrees != 1))
+    if (estimator != "ml")
     {
-      stop("Not available if some 'degrees' are different from 1.")
+      stop("Available only when 'estimator = ml'.\n")
     }
     if (is.null(eq2) & !is.null(regime))
     {
@@ -236,8 +287,9 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     }
     return(object$var2[[eq2]][regime[1] + 1])
   }
-  # covariances between continuous equations
-  if (type == "cov3")
+  
+  # Covariances between the continuous equations
+  if (type == "cov2")
   {
     if (n_eq2 < 2)
     {
@@ -253,7 +305,7 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     }
     if (eq2[1] == eq2[2])
     {
-      stop("Indexes of continuous equations 'eq2' should be distinct.")
+      stop("Indexes of the continuous equations 'eq2' should be distinct.")
     }
     counter <- 1
     for (i in 2:n_eq2)
@@ -276,7 +328,7 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     }
   }
   
-  # Parameters of marginal distribution
+  # Parameters of the marginal distribution
   if (type == "marginal")
   {
     if (is.null(eq))
@@ -286,189 +338,25 @@ coef.mvoprobit <- function (object, ..., eq = NULL, eq2 = NULL,
     return(object$marginal_par[[eq]])
   }
   
-  stop("Incorrect 'type' argument.")
-}
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-
-#' Coefficients extraction method for mnprobit.
-#' @description Extract coefficients and other estimates from mnprobit object.
-#' @param object object of class "mnprobit"
-#' @param ... further arguments (currently ignored)
-#' @param alt integer representing index of the alternative
-#' @param regime integer representing regime of the continuous equation
-#' @param type character representing the type of the output. Possible options
-#' are \code{"coef"}, \code{"coef2"}, \code{"cov1"}, \code{"var"},
-#' \code{"cov2"}, \code{coef_lambda}.
-#' See 'Details' for additional information.
-#' @template coef_mnprobit_details_Template
-#' @returns See 'Details' section.
-coef.mnprobit <- function (object, ..., alt = NULL, 
-                           regime = NULL, type = "coef")
-{
-  # Validate dots
-  if (length(list(...)) > 0)
+  # Coefficients of the multinomial equation
+  if (type == "coef3")
   {
-    warning("Additional arguments passed through ... are ignored.")   
+    if (is.null(eq3))
+    {
+      return (object$coef3)
+    }
+    return (object$coef3[eq3 + 1, ])
   }
   
-  # Some variables
-  n_alt <- object$n_alt
-  n_regimes <- object$control_lnL$n_regimes
-  is2 <- hasName(object, "formula2")
-  
-  # Validation of type
-  type <- tolower(type)
-  if ((type == "coefficients") | (type == "coeff"))
+  # Estimate of the covariance matrix of the 
+  # random errors of the multinomial equations
+  if (type == "cov3")
   {
-    type <- "coef"
-    warning("It is assumed that 'type' is 'coef'.")
-  }
-  if ((type == "coefficients2") | (type == "coeff2"))
-  {
-    type <- "coef2"
-    warning("It is assumed that 'type' is 'coef2'.")
-  }
-  if ((type == "coef") & !is.null(regime))
-  {
-    type <- "coef2"
-    warning("Since 'regime' is not 'NULL' it is assumed that 'type' is 'coef2'.")
-  }
-  if ((type == "lambda") | (type == "coefficients_lambda") | 
-      (type == "coeff_lambda") | (type == "lambdas"))
-  {
-    type <- "coef_lambda"
-    warning("It is assumed that 'type' is 'coef_lambda'.")
-  }
-  
-  # Validate regime
-  if (is2)
-  {
-    if (!is.null(regime))
+    if (length(eq3) == 1)
     {
-      if ((regime < 0) | (regime >= n_regimes))
-      {
-        stop("Incorrect 'regime' value.")
-      }
+      return (object$sigma3)
     }
-  }
-  
-  # Validate alternative
-  if (!is.null(alt))
-  {
-    if (any(alt == n_alt))
-    {
-      stop(paste0("For the alternative ", n_alt, " all coefficients are ",
-                  "constrained to 0 for identification purposes."))
-    }
-    if (any(alt < 1) | any(alt >= n_alt))
-    {
-      stop("Incorrect 'alt' value.")
-    }
-  }
-  
-  # Coefficients of the multinomial equations
-  if (type == "coef")
-  {
-    if (is.null(alt))
-    {
-      return (object$coef)
-    }
-    return (object$coef[, alt])
-  }
-  
-  # Coefficients of the continuous equations
-  if (type == "coef2")
-  {
-    if (is.null(regime))
-    {
-      return (object$coef2)
-    }
-    return (object$coef2[, regime + 1])
-  }
-  
-  # Coefficients of selectivity correction terms (lambda)
-  if (type == "coef_lambda")
-  {
-    if (object$estimator != "2step")
-    {
-      stop("Available only for two-step estimator.")
-    }
-    if (is.null(regime))
-    {
-      return (object$coef_lambda)
-    }
-    if (is.null(alt))
-    {
-      return (object$coef_lambda[[regime + 1]])
-    }
-    return (object$coef_lambda[[regime + 1]][[alt]])
-  }
-  
-  # Estimate of the covariance matrix of
-  # random errors of multinomial equations
-  if (type == "cov1")
-  {
-    if (length(alt) == 1)
-    {
-      return (object$sigma)
-    }
-    return (object$sigma[alt[1], alt[2]])
-  }
-  
-  # Estimates of the variances of
-  # random errors of continuous equation
-  # in different regimes
-  if ((type == "cov2") | (type == "var"))
-  {
-    if (!is2)
-    {
-      stop("Available only when there is a continous equation.")
-    }
-    if (object$estimator != "ml")
-    {
-      stop("Available only for maximum-likelihood estimator.")
-    }
-    if (is.null(regime))
-    {
-      return (object$var2)
-    }
-    return (object$var2[regime + 1])
-  }
-  
-  # Covariances between random errors of
-  # multinomial and continuous equations
-  if (type == "cov12")
-  {
-    if (!is2)
-    {
-      stop("Available only when there is a continous equation.")
-    }
-    if (object$estimator != "ml")
-    {
-      stop("Available only for maximum-likelihood estimator.")
-    }
-    if (is.null(regime) & is.null(alt))
-    {
-      return (object$cov2)
-    }
-    if (is.null(regime) & !is.null(alt))
-    {
-      return (object$cov2[alt, ])
-    }
-    if (!is.null(regime) & is.null(alt))
-    {
-      return (object$cov2[, regime + 1])
-    }
-    return (object$cov2[alt, regime + 1])
-  }
-  
-  # Asymptotic covariance matrix of the estimator
-  if ((type == "cov") | (type == "vcov"))
-  {
-    return(object$cov)
+    return (object$sigma3[eq3[1] + 1, eq3[2] + 1, drop = FALSE])
   }
   
   stop("Incorrect 'type' argument.")

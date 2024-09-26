@@ -15,8 +15,8 @@ arma::field<arma::vec> findGroup(NumericMatrix z,
                                  const int adj = 1)
 {
   const int n_groups = groups.nrow();
-  const int n_obs = z.nrow();
-  const int n_eq = z.ncol();
+  const int n_obs    = z.nrow();
+  const int n_eq     = z.ncol();
   
   arma::field<arma::colvec> ind_g(n_groups);
   arma::vec n_g(n_groups, arma::fill::zeros);
@@ -52,7 +52,10 @@ arma::field<arma::vec> findGroup(NumericMatrix z,
   
   for (int i = 0; i < n_groups; i++)
   {
-    ind_g(i).shed_rows(n_g.at(i), n_obs - 1);
+    if (n_g.at(i) != n_obs)
+    {
+      ind_g(i).shed_rows(n_g.at(i), n_obs - 1);
+    }
   }
   
   return(ind_g);

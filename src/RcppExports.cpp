@@ -34,9 +34,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// lnL_mnprobit
-NumericMatrix lnL_mnprobit(const arma::vec par, const List control_lnL, const String out_type, const int n_sim, const int n_cores, const Nullable<List> regularization);
-RcppExport SEXP _switchSelection_lnL_mnprobit(SEXP parSEXP, SEXP control_lnLSEXP, SEXP out_typeSEXP, SEXP n_simSEXP, SEXP n_coresSEXP, SEXP regularizationSEXP) {
+// lnL_msel
+NumericMatrix lnL_msel(const arma::vec par, const List control_lnL, const String out_type, const int n_sim, const int n_cores, const Nullable<List> regularization);
+RcppExport SEXP _switchSelection_lnL_msel(SEXP parSEXP, SEXP control_lnLSEXP, SEXP out_typeSEXP, SEXP n_simSEXP, SEXP n_coresSEXP, SEXP regularizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const arma::vec >::type par(parSEXP);
@@ -45,13 +45,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type n_sim(n_simSEXP);
     Rcpp::traits::input_parameter< const int >::type n_cores(n_coresSEXP);
     Rcpp::traits::input_parameter< const Nullable<List> >::type regularization(regularizationSEXP);
-    rcpp_result_gen = Rcpp::wrap(lnL_mnprobit(par, control_lnL, out_type, n_sim, n_cores, regularization));
+    rcpp_result_gen = Rcpp::wrap(lnL_msel(par, control_lnL, out_type, n_sim, n_cores, regularization));
     return rcpp_result_gen;
 END_RCPP
 }
-// grad_mnprobit
-NumericMatrix grad_mnprobit(const arma::vec par, const List control_lnL, const String out_type, const int n_sim, const int n_cores, const Nullable<List> regularization);
-RcppExport SEXP _switchSelection_grad_mnprobit(SEXP parSEXP, SEXP control_lnLSEXP, SEXP out_typeSEXP, SEXP n_simSEXP, SEXP n_coresSEXP, SEXP regularizationSEXP) {
+// grad_msel
+NumericMatrix grad_msel(const arma::vec par, const List control_lnL, const String out_type, const int n_sim, const int n_cores, const Nullable<List> regularization);
+RcppExport SEXP _switchSelection_grad_msel(SEXP parSEXP, SEXP control_lnLSEXP, SEXP out_typeSEXP, SEXP n_simSEXP, SEXP n_coresSEXP, SEXP regularizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const arma::vec >::type par(parSEXP);
@@ -60,37 +60,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type n_sim(n_simSEXP);
     Rcpp::traits::input_parameter< const int >::type n_cores(n_coresSEXP);
     Rcpp::traits::input_parameter< const Nullable<List> >::type regularization(regularizationSEXP);
-    rcpp_result_gen = Rcpp::wrap(grad_mnprobit(par, control_lnL, out_type, n_sim, n_cores, regularization));
-    return rcpp_result_gen;
-END_RCPP
-}
-// lnL_mvoprobit
-NumericMatrix lnL_mvoprobit(const arma::vec par, const List control_lnL, const String out_type, const int n_sim, const int n_cores, const Nullable<List> regularization);
-RcppExport SEXP _switchSelection_lnL_mvoprobit(SEXP parSEXP, SEXP control_lnLSEXP, SEXP out_typeSEXP, SEXP n_simSEXP, SEXP n_coresSEXP, SEXP regularizationSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const arma::vec >::type par(parSEXP);
-    Rcpp::traits::input_parameter< const List >::type control_lnL(control_lnLSEXP);
-    Rcpp::traits::input_parameter< const String >::type out_type(out_typeSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_sim(n_simSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_cores(n_coresSEXP);
-    Rcpp::traits::input_parameter< const Nullable<List> >::type regularization(regularizationSEXP);
-    rcpp_result_gen = Rcpp::wrap(lnL_mvoprobit(par, control_lnL, out_type, n_sim, n_cores, regularization));
-    return rcpp_result_gen;
-END_RCPP
-}
-// grad_mvoprobit
-NumericMatrix grad_mvoprobit(const arma::vec par, const List control_lnL, const String out_type, const int n_sim, const int n_cores, const Nullable<List> regularization);
-RcppExport SEXP _switchSelection_grad_mvoprobit(SEXP parSEXP, SEXP control_lnLSEXP, SEXP out_typeSEXP, SEXP n_simSEXP, SEXP n_coresSEXP, SEXP regularizationSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const arma::vec >::type par(parSEXP);
-    Rcpp::traits::input_parameter< const List >::type control_lnL(control_lnLSEXP);
-    Rcpp::traits::input_parameter< const String >::type out_type(out_typeSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_sim(n_simSEXP);
-    Rcpp::traits::input_parameter< const int >::type n_cores(n_coresSEXP);
-    Rcpp::traits::input_parameter< const Nullable<List> >::type regularization(regularizationSEXP);
-    rcpp_result_gen = Rcpp::wrap(grad_mvoprobit(par, control_lnL, out_type, n_sim, n_cores, regularization));
+    rcpp_result_gen = Rcpp::wrap(grad_msel(par, control_lnL, out_type, n_sim, n_cores, regularization));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -98,10 +68,8 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_switchSelection_findGroup", (DL_FUNC) &_switchSelection_findGroup, 3},
     {"_switchSelection_matrixInMatrix", (DL_FUNC) &_switchSelection_matrixInMatrix, 2},
-    {"_switchSelection_lnL_mnprobit", (DL_FUNC) &_switchSelection_lnL_mnprobit, 6},
-    {"_switchSelection_grad_mnprobit", (DL_FUNC) &_switchSelection_grad_mnprobit, 6},
-    {"_switchSelection_lnL_mvoprobit", (DL_FUNC) &_switchSelection_lnL_mvoprobit, 6},
-    {"_switchSelection_grad_mvoprobit", (DL_FUNC) &_switchSelection_grad_mvoprobit, 6},
+    {"_switchSelection_lnL_msel", (DL_FUNC) &_switchSelection_lnL_msel, 6},
+    {"_switchSelection_grad_msel", (DL_FUNC) &_switchSelection_grad_msel, 6},
     {NULL, NULL, 0}
 };
 

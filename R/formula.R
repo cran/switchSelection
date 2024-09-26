@@ -1,74 +1,21 @@
-#' Formulas of mnprobit model.
+#' Formulas of msel model.
 #' @description Provides formulas associated with the 
-#' object of class 'mnprobit'.
-#' @param x object of class 'mnprobit'.
-#' @param ... further arguments (currently ignored).
-#' @param type character; 
-#' if \code{type = "formula"} or \code{type = 1} then function returns 
-#' a formulas of multinomial equation. 
-#' If \code{type = "formula2"} or \code{type = 2} then function returns 
-#' a formula of continuous equation.
-#' @return Returns a formula.
-formula.mnprobit <- function(x, ..., type = "formula") 
-{
-  if (length(list(...)) > 0)
-  {
-    warning("Additional arguments passed through ... are ignored.")   
-  }
-  
-  # Validation
-  if (type == 1)
-  {
-    type <- "formula"
-  }
-  if (type == 2)
-  {
-    type <- "formula2"
-  }
-  if (!(type %in% c("formula", "formula2")))
-  {
-    stop("Incorrect 'type' argument.")
-  }
-  
-  # Formula of multinomial equation
-  if (type == "formula")
-  {
-    return (x$formula)
-  }
-  
-  # Formula of continuous equation
-  if (type == "formula2")
-  {
-    if (!x$other$is2)
-    {
-      return (NULL)
-    }
-    return (x$formula2)
-  }
-  
-  return (NULL)
-}
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-
-#' Formulas of mvoprobit model.
-#' @description Provides formulas associated with the 
-#' object of class 'mvoprobit'.
-#' @param x object of class 'mvoprobit'.
+#' object of class 'msel'.
+#' @param x object of class 'msel'.
 #' @param ... further arguments (currently ignored).
 #' @param type character; 
 #' if \code{type = "formula"} or \code{type = 1} then function returns formulas 
-#' of ordered equations. 
+#' of the ordinal equations. 
 #' If \code{type = "formula2"} or \code{type = 2} then function returns formulas 
-#' of continuous equations.
+#' of the continuous equations.
+#' If \code{type = "formula3"} or \code{type = 3} then function returns formula 
+#' of the multinomial equation.
 #' @param eq positive integer representing the index of the equation which
 #' formula should be returned. If \code{NULL} (default) then formulas for each
 #' equation will be returned as a list which \code{i}-th element associated 
 #' with \code{i}-th equation.
 #' @return Returns a formula or a list of formulas depending on \code{eq} value.
-formula.mvoprobit <- function(x, ..., type = "formula", eq = NULL) 
+formula.msel <- function(x, ..., type = "formula", eq = NULL) 
 {
   if (length(list(...)) > 0)
   {
@@ -83,6 +30,10 @@ formula.mvoprobit <- function(x, ..., type = "formula", eq = NULL)
   if (type == 2)
   {
     type <- "formula2"
+  }
+  if (type == 3)
+  {
+    type <- "formula3"
   }
   if (type == "formula")
   {
@@ -108,12 +59,19 @@ formula.mvoprobit <- function(x, ..., type = "formula", eq = NULL)
       }
     }
   }
-  if (!(type %in% c("formula", "formula2")))
+  if (type == "formula3")
+  {
+    if (!x$other$is3)
+    {
+      return (NULL)
+    }
+  }
+  if (!(type %in% c("formula", "formula2", "formula3")))
   {
     stop("Incorrect 'type' argument.")
   }
   
-  # Formula of ordered equation
+  # Formula of the ordinal equation
   if (type == "formula")
   {
     if (x$control_lnL$n_eq == 1)
@@ -127,7 +85,7 @@ formula.mvoprobit <- function(x, ..., type = "formula", eq = NULL)
     return(x$formula)
   }
   
-  # Formula of continuous equation
+  # Formula of the continuous equation
   if (type == "formula2")
   {
     if (x$control_lnL$n_eq2 == 1)
@@ -141,12 +99,14 @@ formula.mvoprobit <- function(x, ..., type = "formula", eq = NULL)
     return(x$formula2)
   }
   
+  # Formula of the multinomial equation
+  if (type == "formula3")
+  {
+    return(x$formula3)
+  }
+  
   return (NULL)
 }
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
 
 #' Merge formulas
 #' @description This function merges all variables of several formulas
@@ -242,3 +202,119 @@ formula_split <- function(formula, symbol = "|")
   return(f_out)
 }
 
+# Create formulas
+formula_msel <- function(object, formula, formula2, formula3, 
+                         degrees = NULL, degrees3 = NULL)
+{
+  # Get some variables
+  is1        <- object$other$is1
+  is2        <- object$other$is2
+  is3        <- object$other$is3
+  estimator  <- object$estimator
+  n_eq       <- object$other$n_eq
+  n_eq2      <- object$other$n_eq2
+  n_eq3      <- object$other$n_eq3
+  
+  # Include lambda into formula2 according to degrees
+  if ((estimator == "2step") & is1 & (!is.null(degrees)))
+  {
+    for (v in seq_len(n_eq2))
+    {
+      for (j in seq_len(n_eq))
+      {
+        if (degrees[v, j, drop = FALSE] != 0)
+        {
+          for (j1 in seq_len(degrees[v, j]))
+          {
+            # non-interaction terms
+            if (j1 == 1)
+            {
+              formula2[[v]] <- update(formula2[[v]], paste0("~. + lambda", j))
+            }
+            else
+            {
+              formula2[[v]] <- update(formula2[[v]], 
+                                      paste0("~. + I(lambda", j, "^", j1, ")"))
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  # Include lambda_mn into formula3 according to degrees3
+  if ((estimator == "2step") & is3 & (!is.null(degrees3)))
+  {
+    for (v in seq_len(n_eq2))
+    {
+      for (j in seq_len(ncol(degrees3)))
+      {
+        if (degrees3[v, j, drop = FALSE] != 0)
+        {
+          for (j1 in seq_len(degrees3[v, j]))
+          {
+            # non-interaction terms
+            if (j1 == 1)
+            {
+              formula2[[v]] <- update(formula2[[v]], 
+                                      paste0("~. + lambda", j, "_mn"))
+            }
+            else
+            {
+              formula2[[v]] <- update(formula2[[v]], 
+                                      paste0("~. + I(lambda", j, "_mn", 
+                                             "^", j1, ")"))
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  # Coerce formula to type 'formula' and check whether it has "|" symbol
+  # which indicates the presence of heteroscedasticity.
+  # If there is heteroscedasticity then store separate formulas for
+  # mean and variance equations.
+  is_het       <- rep(FALSE, n_eq)
+  formula_mean <- vector(mode = "list", length = n_eq)
+  formula_var  <- vector(mode = "list", length = n_eq)
+  if (is1)
+  {
+    for (i in seq_len(n_eq))
+    {
+      formula[[i]] <- as.formula(formula[[i]])
+      frm_tmp      <- paste(formula[[i]][2], formula[[i]][3], sep = '~')
+      is_het[i]    <- grepl(x = frm_tmp, pattern = "|", fixed = TRUE)
+      if (is_het[i])
+      {
+        frm_tmp           <- formula_split(formula[[i]])
+        formula_mean[[i]] <- frm_tmp[[1]]
+        formula_var[[i]]  <- frm_tmp[[2]]
+      }
+      else
+      {
+        formula_mean[[i]] <- formula[[i]]
+      }
+    }
+  }
+  
+  # Find selectivity terms
+  coef_lambda_ind <- list()
+  if (estimator == "2step")
+  {
+    coef_lambda_ind <- vector(mode = "list", length = n_eq2)
+    for (v in 1:n_eq2)
+    {
+      formula2_terms <- attr(terms(formula2[[v]]), "term.labels")
+      # add 1 for the intercept
+      coef_lambda_ind[[v]] <- which(grepl("lambda", formula2_terms, 
+                                          fixed = TRUE)) + 1
+    }
+  }
+  
+  # Return the results
+  out <- list(is_het       = is_het,       formula     = formula,
+              formula2     = formula2,     formula3    = formula3,
+              formula_mean = formula_mean, formula_var = formula_var,
+              coef_lambda_ind = coef_lambda_ind)
+}
