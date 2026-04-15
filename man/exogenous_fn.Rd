@@ -16,7 +16,7 @@ If \code{newdata} is \code{NULL} and \code{exogenous} is not \code{NULL} then
 This argument is especially useful for causal inference when some endogenous 
 (dependent) variables should be exogenously assigned with some values i.e.,
 in the right hand side of the \code{formula} and \code{formula2}.
-The purpose of the \code{exogeneous} argument is just a \code{convenience} so
+The purpose of the \code{exogenous} argument is just a convenience so
 equivalently it is possible to exogenously provide the values to variables
 via \code{newdata} argument.}
 

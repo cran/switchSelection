@@ -10,10 +10,10 @@ struct_msel(x)
 \item{x}{object of class 'msel'}
 }
 \value{
-The function returns a numeric matrix which columns are 
-\code{groups}, \code{groups2}, \code{groups3} correspondingly. It also has
-additional (last) column with the number of observations associated with the
-corresponding combinations of the groups.
+The function returns a numeric matrix whose columns are 
+\code{groups}, \code{groups2}, and \code{groups3}, respectively. 
+It also has additional (last) column with the number of observations 
+associated with the corresponding combinations of the groups.
 }
 \description{
 Prints information on the structure of the model.

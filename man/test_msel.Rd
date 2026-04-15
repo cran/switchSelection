@@ -15,11 +15,11 @@ test_msel(
   cl = 0.95,
   se_type = "dm",
   trim = 0,
-  vcov = object$cov,
+  vcov = NULL,
   iter = 100,
   generator = rnorm,
   bootstrap = NULL,
-  par_ind = 1:object$control_lnL$n_par,
+  par_ind = NULL,
   eps = max(1e-04, sqrt(.Machine$double.eps) * 10),
   n_sim = 1000,
   n_cores = 1
@@ -81,7 +81,7 @@ parameters of the model.}
 
 \item{iter}{the number of iterations used by the score bootstrap Wald test.}
 
-\item{generator}{function which is used by the score bootstrap to generate
+\item{generator}{a function which is used by the score bootstrap to generate
 random weights. It should have an argument \code{n} representing the
 number of random weights to generate. Other arguments are ignored.}
 
@@ -94,16 +94,17 @@ in the calculation of \code{fn}. If only necessary indexes are included then
 in some cases estimation time may greatly decrease. Set \code{ind = TRUE}
 in \code{\link[switchSelection]{summary.msel}} to see the indexes of the 
 model parameters. If \code{eps} is a vector then \code{eps[i]} determines 
-the increment used to differentiate \code{fn} respect to the parameter with 
-\code{par_ind[i]}-th index.}
+the increment used to differentiate \code{fn} with respect to the parameter
+with \code{par_ind[i]}-th index.}
 
 \item{eps}{a positive numeric value representing the increment used for the
 numeric differentiation of \code{fn}. It may also be a numeric vector
 such that \code{eps[i]} is an increment used to differentiate the 
-\code{fn} respect to the \code{par_ind[i]}-th parameter of the model.
+\code{fn} with respect to the \code{par_ind[i]}-th parameter of the model.
 Set \code{ind = TRUE} in \code{\link[switchSelection]{summary.msel}}, to see 
 the indexes of the model parameters. If \code{eps[i] = 0} then derivative of 
-\code{fn} respect to \code{par_ind[i]}-th parameter is assumed to be zero.}
+\code{fn} with respect to \code{par_ind[i]}-th parameter is assumed 
+to be zero.}
 
 \item{n_sim}{the value passed to the \code{n_sim} argument of the
 \code{\link[switchSelection]{msel}} function.}
@@ -122,11 +123,11 @@ bootstrap has been used.
 confidence intervals were used.
 \item \code{test} - the same as the input argument \code{test}.
 \item \code{method} - the same as the input argument \code{method}.
-\item \code{se_type} - the same as the input argument \code{method}.
+\item \code{se_type} - the same as the input argument \code{se_type}.
 \item \code{ci} - the same as the input argument \code{ci}.
 \item \code{cl} - the same as the input argument \code{cl}.
 \item \code{iter} - the same as the input argument \code{iter}.
-\item \code{n_bootstrap} - an integer representing the number of the
+\item \code{n_bootstrap} - an integer representing the number of 
 bootstrap iterations used.
 \item \code{n_val} - the length of the vector returned by \code{fn}.
 }
@@ -150,9 +151,10 @@ An object of class \code{'test_msel'} has an implementation of the
 \code{summary} method
 \code{\link[switchSelection]{summary.test_msel}}.
 
-In a special case when \code{object} is a list of length \code{2} the 
-function returns an object of class \code{'lrtest_msel'} since the function
-\code{\link[switchSelection]{lrtest_msel}} is called internally.
+In a special case when \code{test = "lr"} and \code{object} is a list of 
+length \code{2} the function returns an object of class \code{'lrtest_msel'} 
+since the function \code{\link[switchSelection]{lrtest_msel}} is called 
+internally.
 }
 \description{
 This function conducts various statistical tests and calculates
@@ -169,7 +171,7 @@ returns a \eqn{m}-dimensional vector of real values:
 \strong{Classic and bootstrap t-test}
  
 If \code{test = "t"} then for each \eqn{j\in \{1,...,m\}} the following 
-hypotheses is tested:
+hypothesis is tested:
 \deqn{H_{0}:g_{j}(\theta) = 0,\qquad H_{1}:g_{j}(\theta)\ne 0.}
 
 The test statistic is: 
@@ -199,8 +201,8 @@ applied to estimate the standard error:
 where \eqn{B} is the number of the bootstrap iterations 
 \code{bootstrap$iter}, \eqn{\hat{\theta}^{(b)}} is the estimate 
 associated with the \eqn{b}-th of these iterations \code{bootstrap$par[b, ]},
-and \eqn{g_{j}(\overline{\hat{\theta}^{(b)}})} is a sample mean of the bootstrap 
-estimates:
+and \eqn{\overline{g_{j}(\hat{\theta}^{(b)})}} is a sample mean of the 
+bootstrap estimates estimates:
 
 \deqn{\overline{g_{j}(\hat{\theta}^{(b)}}) = 
 \frac{1}{B}\sum\limits_{b = 1}^{B}g_{j}(\hat{\theta}^{(b)}).}
@@ -252,7 +254,7 @@ If \code{se_type = "dm"} then delta method is used to estimate this matrix:
 \deqn{\widehat{As.Cov}(g(\hat{\theta})) 
 = g'(\hat{\theta})\widehat{As.Cov}(\hat{\theta}) g'(\hat{\theta})^{T},}
 
-where \eqn{g'(\hat{\theta})} is a Jacobian matrix. A numeric differentiation
+where \eqn{g'(\hat{\theta})} is a Jacobian matrix. Numeric differentiation
 is used to calculate its elements:
 \deqn{g'(\hat{\theta})_{ij} = 
 \frac{\partial g_{i}(\theta)}{\partial \theta_{j}}|_{\theta = \hat{\theta}}.}
@@ -303,7 +305,7 @@ Let \eqn{J} denote a matrix of sample scores \code{object$J}.
 Further, denote by \eqn{J_{b}} a matrix such that its \eqn{b}-th row is a 
 product of the \eqn{w_{ib}} and the \eqn{b}-th row of \eqn{J}. 
 Also, denote by \eqn{H} a matrix of mean values of the derivatives of 
-sample scores respect to the estimated parameters \code{object$H}.
+sample scores with respect to the estimated parameters \code{object$H}.
 
 In addition consider the following notations:
 \deqn{A = g'(\theta) H^{-1}, \qquad S_{b} = A J^{(c)}_{b},}
@@ -321,7 +323,7 @@ A^{T})^{-1}S / n.}
 
 The p-value is estimated as follows:
 \deqn{
-p-value = \frac{1}{B}\sum\limits_{b=1}^{B} I(T_{b} \geq T).
+p-value = \frac{1}{B}\sum\limits_{b=1}^{B} I(T_{b} > T).
 }
 
 \strong{Confidence intervals}
@@ -334,7 +336,7 @@ If \code{ci = "classic"} then classic confidence interval is used which
 assumes asymptotic normality of \eqn{g_{j}(\hat{\theta})}:
 \deqn{(g_{j}(\hat{\theta}) + z_{(1 - cl) / 2}\hat{\sigma}_{j}, 
 g_{j}(\hat{\theta}) + z_{1 - (1 - cl) / 2}\hat{\sigma}_{j}),}
-where \eqn{z_{q}} is a \eqn{q}-th quantile of the standard normal 
+where \eqn{z_{q}} is the \eqn{q}-th quantile of the standard normal 
 distribution and \eqn{cl} is a confidence level \code{cl}. The method used 
 to estimate \eqn{\hat{\sigma}_{j}} depends on the \code{se_type} argument as 
 described above.
@@ -344,11 +346,11 @@ is used. Therefore the sample quantiles of \eqn{g_{j}(\hat{\theta}^{(b)})}
 are used as the realizations of the lower and upper bounds of the confidence 
 interval.
 
-If \code{ci = "bc"} then bias corrected percentile bootstrap confidence 
+If \code{ci = "bc"} then bias-corrected percentile bootstrap confidence 
 interval of Efron (1982) is used as described in Hansen (2022). The default
 percentile bootstrap confidence interval uses sample quantiles of levels 
 \eqn{(1 - cl)/2} and \eqn{1 - (1 - cl)/2}. 
-Bias corrected version uses the sample quantiles of the
+Bias-corrected version uses the sample quantiles of the
 following levels:
 \deqn{(1 - cl)/2 + \Phi(\Phi^{-1}((1 - cl)/2) + s),}
 \deqn{1 - (1 - cl)/2 + \Phi(\Phi^{-1}(1 - (1 - cl)/2) + s),}
@@ -365,6 +367,43 @@ First, nullify 100\code{trim} percent of \eqn{g(\hat{\theta}^{(b)})} with the
 greatest values of the L2-norm of \eqn{q_{b}} (defined above). 
 Then use this 'trimmed' sample to estimate the standard error and the 
 asymptotic covariance matrix.
+
+\strong{Cross-model tests}
+
+It is also possible to test the hypothesis on the parameters estimated
+via several different models. To do so it is necessary to provide a list of 
+models (objects of class \code{msel}) via the \code{object} argument. 
+Particularly, cross-model tests are useful for comparing marginal and 
+treatment effects among the different models. In addition, cross-model
+tests may be used for testing over-identifying restrictions.
+
+If \code{se_type = "dm"} then the joint covariance matrix of the estimators 
+is obtained via the stacking method similar to one implemented by 
+\code{suest} postestimation command in \code{STATA}. Note that there are 
+the following requirements:
+\itemize{
+\item Covariance matrix type \code{cov_type} of each \code{object[[i]]} 
+should be either \code{"mm"} or \code{"sandwich"}. 
+\item Argument \code{data}  of each \code{object[[i]]} should contain a 
+special variable \code{crossind}. Suppose that each \code{object[[i]]$data} 
+is a subsample of some \code{data0}. Then \code{crossind} argument should 
+take different values in range between \code{1} and \code{nrow(data0)}. 
+In addition, observations with the same value of \code{crossind} in 
+\code{object[[i]]$data} should correspond to the same observation 
+in \code{data0}. A simple way to create \code{crossind} variable is just to
+set it equal to \code{1:nrow(data0)} in \code{data0} before splitting it
+into subsamples used by the models.
+\item Argument \code{cluster} of each \code{object[[i]]} is ignored. However,
+clustering may be provided via \code{crosscluster} variable in 
+\code{object[[i]]$data}. Then observations with the same value of 
+\code{crosscluster} are considered to be from the same cluster.
+}
+
+Arguments \code{eps} and \code{par_ind} may be lists whose elements are 
+associated with the corresponding models. If \code{eps} is a scalar, then the 
+same increment will be used for the numeric differentiation with respect to 
+parameters of all models. Also, by default indexes of all parameters of all 
+the models will be included in \code{par_ind}.
 }
 \examples{
 \donttest{
@@ -376,7 +415,7 @@ asymptotic covariance matrix.
 # Set seed for reproducibility
 set.seed(123)
 
-# Upload the data
+# Load the data
 data(cps)
 
 # Estimate the employment model
@@ -491,7 +530,7 @@ y[which(z1 == 0)] <- NA
 
 # Data
 data <- data.frame(s1 = s1, s2 = s2, s3 = s3, s4 = s4,
-                   z1 = z1, z2 = z2, y = y)
+                   z1 = z1, z2 = z2, y = y,   crossind = 1:n)
 
 # ---
 # Step 2
@@ -519,7 +558,7 @@ model <- msel(list(z1 ~ s1 + s2 | s2 + s3,
 # ---
 
 # Use t-test to test for each observation the hypothesis
-# H0: P(z1 = 0, z2 = 2 | Xi) = 0 
+# H0: P(z1 = 1, z2 = 0 | Xi) = 0 
 prob02_fn <- function(object)
 {
    val <- predict(object, group = c(1, 0))
@@ -542,7 +581,7 @@ ATE_fn <- function(object)
 ATE_test <- test_msel(object = model, fn = ATE_fn)
 summary(ATE_test)
 
-# Use Wald to test the hypothesis
+# Use Wald test to test the hypothesis
 # H0: beta1 = beta0
 coef_fn <- function(object)
 {
@@ -595,6 +634,34 @@ summary(wald1_2step)
 wald2_2step <- test_msel(object = model2, fn     = test_fn, 
                          test   = "wald", method = "score")
 summary(wald2_2step)    
+
+# ---
+# Step 4
+# Cross-model tests
+# ---
+
+# Use Wald test to test the hypothesis that coefficients
+# in regime 1 are the same in both models
+cmtest_fn <- function(object)
+{
+  coef1 <- coef(object[[1]], regime = 1, type = "coef2")
+  coef2 <- coef(object[[2]], regime = 1, type = "coef2")
+  val   <- coef1 - coef2
+  
+  return(val)
+}
+
+# Classic Wald test
+test_wald <- test_msel(object = list(model, model2), fn     = cmtest_fn, 
+                       test   = "wald",              method = "classic")
+summary(test_wald)
+
+
+# Score bootstrap Wald test
+test_score <- test_msel(object = list(model, model2), fn     = cmtest_fn, 
+                        test   = "wald",              method = "score")
+summary(test_score)
+
 }
              
 }

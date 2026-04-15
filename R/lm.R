@@ -28,7 +28,7 @@ boot <- function(model, iter = 100)
   if (((iter %% 1) != 0) | (iter <= 0))
   {
     stop(paste0("Wrong 'iter' argument. ", 
-                "Please, insture that it is a positive integer.\n"))
+                "Please ensture that it is a positive integer.\n"))
   }
   data <- model.frame(model)
   coef.names <- names(data)

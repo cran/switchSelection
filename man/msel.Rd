@@ -25,7 +25,8 @@ msel(
   n_cores = 1,
   control = list(),
   regularization = list(),
-  type3 = "logit"
+  type3 = "logit",
+  cluster = NA
 )
 }
 \arguments{
@@ -51,11 +52,11 @@ values of the ordinal dependent variables i.e., from the left hand side of
 j-th column is unobservable when other dependent variables have particular 
 values i.e., given in the same row. See 'Details' for additional information.}
 
-\item{groups2}{the same as \code{groups} argument but for the continuous
+\item{groups2}{the same as the \code{groups} argument but for the continuous
 dependent variables from \code{formula2}. See 'Details' for additional 
 information.}
 
-\item{groups3}{the same as \code{groups} argument but for the multinomial
+\item{groups3}{the same as the \code{groups} argument but for the multinomial
 dependent variable from \code{formula3}. See 'Details' for additional 
 information.}
 
@@ -76,7 +77,7 @@ information.}
 
 \item{start}{a numeric vector of initial parameters' values. It will be used
 as a starting point for the optimization purposes. It is also possible to
-provide an object of class \code{'msel'} then its \code{'par'} element will 
+provide an object of class \code{'msel'}; then its \code{'par'} element will 
 be used as a starting point.}
 
 \item{estimator}{a character determining estimation method.
@@ -91,21 +92,21 @@ following estimators are available. If \code{cov_type = "hessian"} then
 negative inverse of Hessian matrix will be applied. If 
 \code{cov_type = "gop"} then inverse of Jacobian outer products will be used.
 If \code{cov_type = "sandwich"} then sandwich covariance matrix
-estimator will be applied. if \code{cov_type = "no"} then an identity matrix 
-will be used. If \code{cov_type = "mm"} (default) then sandwich estimator is 
+estimator will be applied. 
+If \code{cov_type = "no"} then a matrix of \code{NA} values will be used. 
+If \code{cov_type = "mm"} (default) then sandwich estimator is 
 used along with the penalized log-likelihood function. Therefore if there is 
-no regularization then \code{"mm"} and \code{"sandwhich"} estimators are the
-same. Second, suppose that \code{estimator = "2step"} then available 
-estimators of the asymptotic covariance matrix are identity matrix 
-\code{cov_type = "no"} and the method of moments \code{cov_type = "mm"}.}
+no regularization then \code{"mm"} and \code{"sandwich"} estimators are the
+same. Second, suppose that \code{estimator = "2step"}. Then only available
+options are \code{cov_type = "mm"} and \code{cov_type = "no"}.}
 
 \item{degrees}{a vector of non-negative integers such that \code{degrees[i]}
-represents the degree of the polynomial which elements are selectivity 
+represents the degree of the polynomial whose elements are selectivity 
 terms associated with the \code{i}-th ordered equation. See 'Details' for 
 additional information.}
 
 \item{degrees3}{a vector of non-negative integers such that 
-\code{degrees3[i]} represents the degree of the polynomial which elements 
+\code{degrees3[i]} represents the degree of the polynomial whose elements 
 are selectivity terms associated with the \code{i}-th multinomial equation. 
 See 'Details' for additional information.}
 
@@ -114,7 +115,7 @@ more than 3 ordered equations. Otherwise alternative (much more efficient)
 algorithms will be used to calculate multivariate normal probabilities.}
 
 \item{n_cores}{a positive integer representing the number of CPU cores used 
-for the parallel computing. If possible it is highly recommend to set it 
+for the parallel computing. If possible it is highly recommended to set it 
 equal to the number of available physical cores.}
 
 \item{control}{a list of control parameters. See 'Details' for additional 
@@ -122,7 +123,7 @@ information.}
 
 \item{regularization}{a list of control parameters for regularization.
 Element \code{ridge_ind} is a vector of indexes of parameters subject to 
-regularization according to quadratic (ridge) penalty function.
+regularization according to the quadratic (ridge) penalty function.
 These indexes correspond to parameters from \code{par} output element. 
 Set \code{show_ind} argument of \code{\link[switchSelection]{summary.msel}} 
 to \code{TRUE} to see these indexes.
@@ -137,6 +138,12 @@ the same but for the lasso penalty term.}
 considered. If \code{type3 = "logit"} then multinomial logit model will
 be used. If \code{type3 = "probit"} then multinomial probit model
 will be applied. See 'Details' for additional information.}
+
+\item{cluster}{an object of class \code{"formula"} describing the variables 
+which interactions determine the clusters used to estimate the asymptotic 
+covariance matrix when \code{cov_type = "sandwich"} or 
+\code{cov_type = "mm"}. Alternatively this argument may be specified as a 
+character vector of these variables.}
 }
 \value{
 This function returns an object of class \code{"msel"}. 
@@ -154,7 +161,7 @@ elements are coerced to \code{"formula"} type.
 \item \code{model1} - an object of class \code{"msel"} with the first step 
 estimation results.
 \item \code{data} - the same as \code{data} input argument but
-without missing (by random) values.
+without missing (at random) values.
 \item \code{W_mean} - a list such that \code{W_mean[[j]]} is a matrix of the 
 regressors \eqn{w_{ji}} of the mean equation of \eqn{z_{ji}^{*}}.
 \item \code{W_var} - a list such that \code{W_var[[j]]} is a matrix of the 
@@ -206,7 +213,7 @@ numeric value representing \eqn{\widehat{Cov}(u_{ji}, u_{ti})}.
 \eqn{\widehat{Var}(\varepsilon_{ri}^{(v)})}.
 \item \code{cov2} - a list of numeric matrices which element 
 \code{sigma2[[v]][j, r + 1]} represents
-\eqn{\widehat{Cov}(u_{ji}, \varepsilon_{ri}^{(v)}))}.
+\eqn{\widehat{Cov}(u_{ji}, \varepsilon_{ri}^{(v)})}.
 \item \code{sigma2} - a list of numeric matrices representing the estimates
 of the covariances between random errors of the continuous equations in 
 different regimes 
@@ -216,7 +223,7 @@ different regimes
 numeric vector of estimates of the parameters of the marginal distribution 
 of \eqn{u_{ji}}.
 \item \code{coef3} - a numeric matrix such that \code{coef3[j + 1, ]} is 
-a numerc vector representing \eqn{\hat{\tilde{\gamma}}_{j}}.
+a numeric vector representing \eqn{\hat{\tilde{\gamma}}_{j}}.
 \item \code{sigma3} - a numeric matrix such that \code{sigma3[j + 1, t + 1]} 
 is a numeric value representing 
 \eqn{\widehat{Cov}(\tilde{u}_{ji}, \tilde{u}_{ti})}.
@@ -226,8 +233,8 @@ corresponds to \eqn{\hat{\lambda}_{ji}} of the ordinal equations.
 corresponds to \eqn{\hat{\lambda}_{ji}} of the multinomial equation.
 \item \code{H} - if \code{estimator = "ml"} then \code{H} is a Hessian matrix 
 of the log-likelihood function. If \code{estimator = "2step"} then \code{H}
-is a numeric matrix of the derivatives of mean sample scores respect to the 
-estimated parameters.
+is a numeric matrix of the derivatives of mean sample scores with respect 
+to the estimated parameters.
 \item \code{J} - if \code{estimator = "ml"} then \code{J} is a Jacobian 
 matrix of the log-likelihood function. If \code{estimator = "2step"} then
 \code{J} is a numeric matrix such that \code{J[, s]} is a vector of sample 
@@ -238,12 +245,13 @@ the parameters' estimator.
 \item \code{tbl} - a list of special tables used to create a summary 
 (not intended for the users).
 \item \code{se} - a numeric vector of standard errors of the estimates.
-\item \code{p_value} - a numeric vectors of the p-values of the tests on 
+\item \code{p_value} - a numeric vector of the p-values of the tests on 
 the significance of the estimated parameters where the null hypothesis is 
 that corresponding parameter is zero.
 \item \code{logLik} - the value of log-likelihood function at \code{par}.
 \item \code{other} - a list of additional variables not intended for the 
 users.
+\item \code{cluster} - the same as \code{cluster} input argument.
 }
 
 It is highly recommended to get the estimates of the parameters via
@@ -256,8 +264,8 @@ with multiple outcomes. Both maximum-likelihood and two-step estimators are
 implemented.
 }
 \details{
-This function allows to estimate multivariate and multinomial
-sample selection and endogenous switching models with multiple outcomes. 
+This function allows the estimation of multivariate and multinomial 
+sample selection and endogenous switching models with multiple outcomes.
 These models are the systems of ordinal, continuous and multinomial equations
 described by \code{formula}, \code{formula2} and \code{formula3} 
 respectively.
@@ -283,8 +291,8 @@ multivariate ordered probit model with the heteroscedastic random errors:
 where:
 \itemize{
 \item \eqn{n} - the number of observations. If there are no omitted 
-observations then \eqn{n} equals to \code{nrow(data)}.
-\item \eqn{J} - the number of ordinal equations which equals to 
+observations then \eqn{n} equals \code{nrow(data)}.
+\item \eqn{J} - the number of ordinal equations which equals 
 \code{length(formula)}.
 \item \eqn{z_{ji}^{*}} - an unobservable (latent) value of the \code{j}-th
 dependent ordinal variable.
@@ -300,7 +308,7 @@ which should be described in \code{formula[[j]]}.
 mean equation.
 \item \eqn{w_{ji}\gamma_{j}} - the linear predictor (index) of the \eqn{j}-th 
 mean equation.
-\item \eqn{u_{i}} - a multivariate normal random vector which elements are
+\item \eqn{u_{i}} - a multivariate normal random vector whose elements are
 standard normal random variables.
 \item \eqn{\Sigma} - a correlation matrix of \eqn{u_{i}} so
 \eqn{\Sigma_{t_{1}t_{2}}=\text{corr}\left(u_{it_{1}}, u_{it_{2}}\right)}.
@@ -321,8 +329,8 @@ equation. If all \eqn{z_{ji}} are binary variables then the model becomes a
 multivariate probit.
 
 By default the joint distribution of \eqn{u_{i}} is multivariate normal.
-However by using \code{marginal} argument it is possible to consider the 
-joint distribution that is determined by the Gaussian copula and possibly
+However, by using the \code{marginal} argument, it is possible to consider 
+the joint distribution that is determined by the Gaussian copula and possibly
 non-normal marginal distributions. Specifically, \code{names(marginal)[i]} 
 is the name of the marginal distribution of \eqn{u_{ji}} and 
 \code{marginal[[i]]} is the number of parameters of this distribution.
@@ -349,8 +357,8 @@ a utility of the \code{j}-th alternative.
 \item \eqn{\tilde{z}_{i}} - a selected alternative i.e., one which provides 
 the greatest utility \eqn{\tilde{z}_{ji}^{*}}.
 \item \eqn{\tilde{w}_{i}} - the regressors of the multinomial equation
-which should be described in \code{formula3} and assumed to be the same for
-all the alternatives.
+which should be described in \code{formula3} and are assumed to be the same 
+for all the alternatives.
 \item \eqn{\tilde{\gamma}_{j}} - the regression coefficients of the 
 \eqn{j}-th alternative's equation.
 \item \eqn{\tilde{w}_{i}\tilde{\gamma}_{j}} - the linear predictor (index) 
@@ -358,20 +366,20 @@ of the \eqn{j}-th alternative's equation.
 \item \eqn{\tilde{u}_{i}} - a vector of random errors.
 }
 
-For the identification purposes it is assumed that the regression 
+For identification purposes it is assumed that the regression 
 coefficients of the last alternative are zero 
 \eqn{\tilde{\gamma}_{\tilde{J} - 1} = (0,...,0)^{T}}.
 
-Joint distribution of \eqn{\tilde{u}_{i}} depends on the value of 
-\code{type3} argument. If \code{type3 = "logit"} then multinomial logit
+The joint distribution of \eqn{\tilde{u}_{i}} depends on the value of the 
+\code{type3} argument. If \code{type3 = "logit"} then a multinomial logit
 model is considered. It assumes that \eqn{\tilde{u}_{ji}} are independent
 and their marginal distribution is Gumbel (error value distribution).
-If \code{type3 = "probit"} then multinomial probit model is used so 
-it is assumed that joint distribution of \eqn{\tilde{u}_{i}} is 
+If \code{type3 = "probit"} then a multinomial probit model is used, so 
+it is assumed that the joint distribution of \eqn{\tilde{u}_{i}} is 
 multivariate normal with zero mean and the covariance matrix 
 \eqn{\tilde{\Sigma}}. For identification purposes it is also assumed 
 that \eqn{\tilde{\Sigma}_{11} = 1} so \eqn{Var(\tilde{u}_{0i}) = 1}. 
-In addition \eqn{\tilde{u}_{(\tilde{J}-1)i}=0} which implies 
+In addition, \eqn{\tilde{u}_{(\tilde{J}-1)i}=0} which implies 
 \eqn{\tilde{\Sigma}_{t(\tilde{J})}=\tilde{\Sigma}_{(\tilde{J})t}=0} for all 
 \eqn{t\in\{0,...,\tilde{J}-1\}}.
 
@@ -388,9 +396,9 @@ where:
 \item \eqn{V} - the number of continuous equations.
 \item \eqn{r^{(v)}} - the regime of the \eqn{v}-th continuous equation.
 \item \eqn{y_{r^{(v)}i}^{(v)}} - the \eqn{r^{(v)}}-th potential outcome
-(in a sense of the Neyman-Rubin framework) of the \eqn{v}-th continuous 
+(in the sense of the Neyman-Rubin framework) of the \eqn{v}-th continuous 
 equation.
-\item \eqn{R^{(v)}} - the number of the potential outcomes of the 
+\item \eqn{R^{(v)}} - the number of potential outcomes of the 
 \eqn{v}-th continuous equation.
 \item \eqn{x_{i}^{(v)}} - the regressors of the \eqn{v}-th continuous 
 equation. They are provided via \code{formula2[[v]]}.
@@ -404,7 +412,7 @@ continuous equation in the regime \eqn{r^{(v)}}.
 multinomial equations}
 
 If \code{formula2} is not provided then maximum-likelihood estimator is used 
-\code{estimator = "ml"} to estimate the parameters of the multivariate 
+with \code{estimator = "ml"} to estimate the parameters of the multivariate 
 ordinal and multinomial equations.
 
 If both \code{formula} and \code{formula3} are provided then parameters of
@@ -420,13 +428,13 @@ If \code{formula} and \code{formula3} are not provided then it is assumed
 that each continuous equation has only one regime so \eqn{R^{(v)} = 1} for
 each \eqn{v\in\{1,...,V\}}.
 
-If \code{estimator = "ml"} then maximum-likelihood estimator is used under
-the assumption that the distribution of random errors is multivariate normal.
-If \code{estimator = "2step"} then \eqn{V}-stage least squares estimator is
-used. In the latter case \eqn{v}-th equation is estimated by the least
-squares estimator and for every \eqn{v_{0}} such that \eqn{v_{0} < v} if 
-\eqn{y_{0i}^{(v_{0})}} is included in \eqn{x_{i}^{(v)}} then 
-\eqn{y_{0i}^{(v_{0})}} is substituted with its estimate 
+If \code{estimator = "ml"} then the maximum-likelihood estimator is used 
+under the assumption that the distribution of random errors is multivariate 
+normal. If \code{estimator = "2step"} then the \eqn{V}-stage least squares 
+estimator is used. In the latter case \eqn{v}-th equation is estimated by the
+least squares estimator and for every \eqn{v_{0}} such that 
+\eqn{v_{0} < v} if \eqn{y_{0i}^{(v_{0})}} is included in \eqn{x_{i}^{(v)}} 
+then \eqn{y_{0i}^{(v_{0})}} is substituted with its estimate 
 \eqn{\hat{y}_{0i}^{(v_{0})}} obtained on the \eqn{v_{0}}-th step.
 Therefore if \eqn{v_{0} < v} then if some endogenous variable appears on the
 left hand side of \code{formula2[[v]]} it should not appear on the right hand 
@@ -436,8 +444,8 @@ side of \code{formula2[[v0]]}.
 multivariate ordered selection}
 
 Suppose that \eqn{z_{i}} represents the ordinal potential outcomes while 
-the observable values are \eqn{z_{i}^{(o)} = g^{(1)}(z_{i})}, where function
-\eqn{g^{(1)}(z_{i})} converts unobservable values of \eqn{z_{i}} to 
+the observable values are \eqn{z_{i}^{(o)} = g^{(1)}(z_{i})}, where the 
+function \eqn{g^{(1)}(z_{i})} converts unobservable values of \eqn{z_{i}} to 
 \eqn{-1}. Therefore \eqn{z_{ji}^{(o)}} instead of \eqn{z_{i}} appears on the 
 left hand side of the \code{formula[[j]]}.
 
@@ -445,9 +453,9 @@ For example, consider a binary variable for the employment status
 (0 - unemployed, 1 - employed) and an ordinal variable \eqn{z_{2i}} 
 (ranging from 0 to 2) for job satisfaction 
 (0 - unsatisfied, 1- satisfied, 2 - highly satisfied). Then \eqn{z_{2i}} is 
-observable only when \eqn{z_{1i}} equals 1 since job satisfaction 
+observable only when \eqn{z_{1i}} equals 1 since job satisfaction is 
 observable only for working individuals. Consequently \eqn{z_{2i}^{(o)}} 
-should be equal to -1 (minus one) whenever \eqn{z_{1i}} equals to 0:
+should be equal to -1 (minus one) whenever \eqn{z_{1i}} equals 0:
 \deqn{z_{i}^{(o)}=g^{(1)}(z_{i})=
 \begin{cases}
 (1, 2)\text{, if }z_{i} = (1, 2)\\
@@ -469,30 +477,31 @@ function \eqn{g^{(1)}(z_{i})}. In this particular example matrix
 
 Notice that in this particular example it is necessary to ensure that
 in \code{data} if \eqn{z_{1i}^{(o)}} equals 0 then \eqn{z_{2i}^{(o)}}
-equals to -1. Also in this case matrix \code{groups} will be created 
+equals -1. Also in this case matrix \code{groups} will be created 
 automatically so there is no need to provide it manually.
 
-By using \code{groups} argument it is straightforward to consider 
+By using the \code{groups} argument it is straightforward to consider 
 various other models with ordinal outcomes and multivariate ordered 
 selection mechanisms.
 
-If some values of the ordinal variables \eqn{z_{ji}} are missing (by random) 
-i.e., take \code{NA} value then the contribution of other ordinal dependent 
-variables (for the i-th observation) still may be included into the 
+If some values of the ordinal variables \eqn{z_{ji}} are missing (at random) 
+i.e., take an \code{NA} value then the contribution of other ordinal 
+dependent variables (for the i-th observation) still may be included into the 
 likelihood function by manually substituting \code{NA} with -1 in the 
 \code{data}. However, ensure that this particular (missing) \eqn{z_{ji}} is 
-not a regressor for other dependent variable that may happen in the 
+not a regressor for another dependent variable that may happen in the 
 hierarchical systems.
 
-It is useful to use \code{groups} argument to consider causal inference
+It is useful to use the \code{groups} argument to consider causal inference
 models. For example, suppose that \eqn{z_{1i}} represents a binary treatment 
 variable for the university diploma (0 - no diploma, 1 - has diploma). Also, 
 \eqn{z_{2i}} is a binary potential outcome for the employment status 
 (0 - unemployed, 1 - employed) of the individual if she has university 
 diploma. Finally, \eqn{z_{3i}} is a binary potential outcome for the 
-employment status (0 - unemployed, 1 - employed) if individual does not have 
-university diploma. Since \eqn{z_{2i}} is observable only if \eqn{z_{1i} = 1} 
-and \eqn{z_{3i}} is observable only when \eqn{z_{2i} = 0} we get:
+employment status (0 - unemployed, 1 - employed) if the individual does not 
+have a university diploma. Since \eqn{z_{2i}} is observable only if 
+\eqn{z_{1i} = 1} and \eqn{z_{3i}} is observable only when \eqn{z_{2i} = 0} 
+we get:
 \deqn{z_{i}^{(o)} = 
 \begin{cases}
 (1, 1, -1)\text{, if }z_{1i} = 1\text{ and }z_{2i}=1\\
@@ -516,7 +525,7 @@ argument should include all possible values of \eqn{z_{i}^{(o)}}:
 \strong{Estimation of the model with continuous outcomes and 
 multivariate ordered selection}
 
-To simplify the notations suppose that there is only one continuous equation
+To simplify the notation, suppose that there is only one continuous equation
 with multiple regimes:
 
 \deqn{y_{ri} = x_{i}\beta_{r} + \varepsilon_{ri},}
@@ -546,8 +555,8 @@ variables \eqn{z_{i}^{(o)}}.
 \item \eqn{\varepsilon_{i}} - a vector of random errors.
 }
 
-The value of \code{groups2[i]} argument specifies the value 
-of \eqn{g^{(2)}(z_{i}^{(o)})} when \eqn{z_{i}^{(o)}} equals to 
+The value of the \code{groups2[i]} argument specifies the value 
+of \eqn{g^{(2)}(z_{i}^{(o)})} when \eqn{z_{i}^{(o)}} equals 
 \code{groups[i, ]}. The values of \eqn{y_{i}} in \code{data} such that
 \eqn{g^{(2)}(z_{i}^{(o)})=-1} should be set to \code{NA}.
 
@@ -562,9 +571,9 @@ observe \eqn{y_{0i}} and for highly satisfied workers \eqn{z_{2i} = 2} we
 observe \eqn{y_{1i}}.
 
 To estimate this model it is necessary to  manually specify the structure of 
-the equations via \code{groups} and \code{groups2} arguments by providing all 
-possible combinations of the ordinal variables and the regimes of the 
-continuous equation:
+the equations via the \code{groups} and \code{groups2} arguments by 
+providing all possible combinations of the ordinal variables and the regimes 
+of the continuous equation:
 
 \deqn{\text{groups} =
 \begin{bmatrix}
@@ -587,10 +596,10 @@ satisfied workers \eqn{y_{1i}}.
 Similarly \code{groups2[2] = 0} indicates that when 
 \code{groups[2, ] = c(1, 1)} i.e., \eqn{z_{1i} = 1} and \eqn{z_{2i} = 1} we 
 observe \eqn{y_{i}} in the regime \code{0} corresponding to the wage of the
-satisfied workers  \eqn{y_{0i}}. Also, \code{groups3[3] = -1} means that when 
+satisfied workers  \eqn{y_{0i}}. Also, \code{groups2[3] = -1} means that when 
 \code{groups[3, ] = c(1, 0)} i.e., \eqn{z_{1i} = 1} and \eqn{z_{2i} = 0} we
 do not observe the wage of the worker \eqn{y_{i}} since he is unsatisfied.
-Finally, \code{groups3[4] = -1} means that when 
+Finally, \code{groups2[4] = -1} means that when 
 \code{groups[4, ] = c(0, -1)} i.e., \eqn{z_{1i} = 0} and 
 \eqn{z_{2i}^{(o)} = -1} we do not observe the wage of the worker 
 \eqn{y_{i}} since he is unemployed.
@@ -632,8 +641,8 @@ b_{ji}=
 \end{cases}.}
 
 Notice that the regression equation has selectivity terms \eqn{\lambda_{ji}}
-which may be correlated with \eqn{x_{i}}. Therefore until random errors
-\eqn{u_{i}} and \eqn{\varepsilon_{i}} are correlated the least squares 
+which may be correlated with \eqn{x_{i}}. Therefore if random errors
+\eqn{u_{i}} and \eqn{\varepsilon_{i}} are correlated, the least squares 
 estimator of \eqn{x_{i}} on \eqn{y_{ri}} is inconsistent. 
 To get consistent estimates of \eqn{\beta_{r}} it is possible to use 
 maximum-likelihood \code{estimator = "ml"} or two-step (method of moments) 
@@ -647,8 +656,8 @@ regression of \eqn{y_{ri}} on \eqn{x_{i}} and the first step estimates
 \eqn{\Sigma^{(12)}_{j(r+1)}}.
 
 If the joint distribution of random errors \eqn{\varepsilon_{i}}, \eqn{u_{i}} 
-is not multivariate normal then \eqn{\lambda_{ji}} terms may enter continuous
-equation non-linearly. Following Newey (2009) and 
+is not multivariate normal then \eqn{\lambda_{ji}} terms may enter the 
+continuous equation non-linearly. Following Newey (2009) and 
 E. Kossova, L. Kupriianova, and B. Potanin (2020) it is assumed that:
 \deqn{y_{ri}= x_{i}\beta_{r} + \zeta_{i}\tau_{r} + \varepsilon_{i}^{*},}
 where \eqn{\tau_{r}} is a \eqn{n_{\lambda}}-dimensional column vector and:
@@ -660,31 +669,32 @@ Functions \eqn{\zeta_{t}(\lambda_{i})} are specified manually by the user in
 the \code{formula2} inside \code{I()}. For example, to specify
 \eqn{\zeta_{t}(\lambda_{i}) = \lambda_{1i}\times \lambda_{2i}} it is 
 sufficient to have a term \code{I(lambda1 * lambda2)} in \code{formula2}. 
-Notice that to avoid the confusions no variables in \code{data} should have 
+Notice that to avoid confusion, no variables in \code{data} should have 
 the names containing \code{"lambda"}. Otherwise these variables will be 
 dropped.
 
-It is possible to specify \eqn{\zeta_{t}(\lambda_{i})} functions as the 
-polynomial without interaction terms by using \code{degrees} argument.
+It is possible to specify \eqn{\zeta_{t}(\lambda_{i})} functions as a 
+polynomial without interaction terms by using the \code{degrees} argument.
 Specifically, if \code{degrees[j] = t} then \code{lambdaj}, 
 \code{I(lambdaj ^ 2)},...,\code{I(lambdaj ^ t)} terms are added to
-\code{formula2}. However, if \code{degrees} argument is used then no 
+\code{formula2}. However, if the \code{degrees} argument is used then no 
 functions of \code{lambdaj} should be provided manually in \code{formula2}.
 Otherwise it will be assumed that \code{degrees} is a vector of zeros.
-Also if \code{estimator = "2step"}, there is not \code{lambdaj} terms in 
-\code{formula2} and \code{degrees} is \code{NA} then \code{degrees} will be
-converted in a vector of ones.
+Also, if \code{estimator = "2step"}, there are no \code{lambdaj} terms in 
+\code{formula2} and \code{degrees} is \code{NA}, then \code{degrees} will 
+be converted to a vector of ones.
 
 If there are multiple continuous equations then \code{formula2} should be 
 a list of formulas. Further, if \code{estimator = "2step"} then the second 
 step is a \eqn{V}-stage least squares estimator with \code{lambda} terms.
-If they are provided via \code{degrees} argument then it should be a matrix 
-which \code{v}-th row corresponds to the \code{v}-th continuous equation.
+If they are provided via the \code{degrees} argument, then it should be a 
+matrix whose \code{v}-th row corresponds to the \code{v}-th continuous 
+equation.
 
-For example, consider previous example with additional continuous equation 
-for working hours
+For example, consider the previous example with additional continuous 
+equation for working hours
 \eqn{y_{i}^{(2)}} which does not vary with the satisfaction of the workers
-\eqn{z_{2i}} but observable only for the employed individuals 
+\eqn{z_{2i}} but is observable only for the employed individuals 
 \eqn{z_{1i} = 1}. To estimate the system with this additional continuous 
 equation simply substitute all \eqn{y_{i}^{(2)}} (such that \eqn{z_{1i}=0}) 
 in \code{data} with \code{NA} and specify:
@@ -705,13 +715,13 @@ in \code{data} with \code{NA} and specify:
 
 Notice that \code{groups2[, 1]} describes the regimes of the wage equation 
 \eqn{y_{i}^{(1)}} while \code{groups[, 2]} contains the regimes of the hours 
-equation \eqn{y_{i}^{(2)}}. Note that formula of the first equation (wage)
-should be specified in \code{formula2[[1]]} and formula of the second
-equation should be provided via \code{formula2[[2]]} i.e., as the
+equation \eqn{y_{i}^{(2)}}. Note that the formula of the first equation
+(wage) should be specified in \code{formula2[[1]]} and the formula of the 
+second equation should be provided via \code{formula2[[2]]} i.e., as the
 first and the second elements in a \code{formula2} list correspondingly.
 
-If \code{marginal} argument is used then aforementioned formula of 
-\eqn{\lambda_{ji}} is slightly modified to address for the non-normal 
+If the \code{marginal} argument is used, then aforementioned formula of 
+\eqn{\lambda_{ji}} is slightly modified to address the non-normal 
 marginal distribution of \eqn{u_{ji}}.
 
 \strong{Estimation of the model with continuous outcomes and multinomial 
@@ -725,14 +735,14 @@ instead of \code{groups} is used. Since there is only a single multinomial
 equation argument \code{groups3} is a vector.
 If \code{groups3[k] = q} and \code{groups2[k, v] = r} then
 \eqn{\tilde{z}_{i} = q} implies \eqn{y_{i}^{(v)} = y_{ri}^{(v)}}. 
-Remind that a special value \code{r = -1} implies that \eqn{y_{i}^{(v)}} is
+Recall that a special value \code{r = -1} implies that \eqn{y_{i}^{(v)}} is
 unobservable.
 
-Only two-step \code{estimator = "2step"} estimator of this model is 
-available that is similar to the one described above. The only difference is 
-the formula used to estimate selectivity terms. If \code{type = "logit"} then 
-two-step estimator of Dubin-McFadden (1984) is used so selectivity terms
-are as follows:
+Only the two-step \code{estimator = "2step"} estimator of this model is 
+available, which is similar to the one described above. The only difference 
+is the formula used to estimate selectivity terms. If \code{type = "logit"}, 
+then the two-step estimator of Dubin-McFadden (1984) is used, so selectivity 
+terms are as follows:
 
 \deqn{\lambda_{ji} = 
 \begin{cases}
@@ -752,7 +762,7 @@ where \eqn{j\in\{0,...,\tilde{J} - 1\}} and:
 \text{, otherwise}\\
 \end{cases}.}
 
-If \code{type = "probit"} then two-step estimator of Kossova and 
+If \code{type = "probit"}, then the two-step estimator of Kossova and 
 Potanin (2022) is used with the selectivity terms of the form:
 
 \deqn{\lambda_{ji} = \left(A^{(\tilde{z}_{i})}\lambda_{i}^{*}\right)_{j},}
@@ -792,15 +802,15 @@ Probabilities \eqn{P(z_{i})} are calculated by using a cumulative
 distribution function of the multivariate normal distribution with zero mean
 and the covariance matrix of \eqn{\tilde{u}^{(ji)}}.
 
-In \code{formula2} selectivity terms associated with the 
+In the \code{formula2}, selectivity terms associated with the 
 multinomial equation should be named \code{lambdaj_mn} instead of 
 \code{lambdaj}. Argument \code{degrees3} is similar to \code{degrees}.
 
 Consider a simple example of this model. Suppose that \eqn{\tilde{z}_{i}}
 is a multinomial variable for the employment status 
 (0 - unemployed, 1 - working in IT sector, 2 - working in other sector). 
-Wage \eqn{y_{i}} is unobservable for unemployed \eqn{\tilde{z}_{i} = 0}, 
-equals to \eqn{y_{0i}} in IT sector \eqn{\tilde{z}_{i} = 1} and equals to 
+Wage \eqn{y_{i}} is unobservable for the unemployed \eqn{\tilde{z}_{i} = 0}, 
+equals \eqn{y_{0i}} in the IT sector \eqn{\tilde{z}_{i} = 1}, and equals 
 \eqn{y_{1i}} in other sectors \eqn{\tilde{z}_{i} = 2}. 
 To estimate this model set \code{groups3 = (0, 1, 2)} and 
 \code{groups2 = (-1, 0, 1)}. Then substitute all \eqn{y_{i}} such that 
@@ -809,11 +819,12 @@ To estimate this model set \code{groups3 = (0, 1, 2)} and
 \strong{Estimation of the model with continuous outcomes and mixed selection}
 
 It is possible to consider the model with continuous outcomes and both 
-multinomial and ordinal selection equations. Remind that it is assumed that
+multinomial and ordinal selection equations. Recall that it is assumed that
 random errors of the ordered and multinomial equations are independent. 
 Therefore if \code{formula} and \code{formula3} are provided then both 
 \code{lambdaj} and \code{lambdaj_mn} are included in \code{formula2}. Only 
-two-step estimator \code{estimator = "2step"} is available for this model.
+the two-step estimator \code{estimator = "2step"} is available for 
+this model.
 
 \strong{Missing values}
 
@@ -834,13 +845,12 @@ This argument is used for some internal purposes of the package.
 Optimization always starts with \code{\link[stats]{optim}}. If
 \code{opt_type = "gena"} or \code{opt_type = "pso"} then 
 \code{\link[gena]{gena}} or \code{\link[gena]{pso}} is used
-to proceed optimization starting
-from initial point provided by \code{optim}. Manual arguments to 
-\code{\link[stats]{optim}}
-should be provided in a form of a list through \code{opt_args$optim}.
+to proceed with optimization starting from the initial point provided by 
+\code{optim}. Manual arguments to \code{\link[stats]{optim}}
+should be provided in the form of a list through \code{opt_args$optim}.
 Similarly \code{opt_args$gena} and \code{opt_args$pso} provide manual
 arguments to \code{\link[gena]{gena}} and \code{\link[gena]{pso}}.
-For example to provide Nelder-Mead optimizer to 
+For example, to provide the Nelder-Mead optimizer to 
 \code{\link[stats]{optim}} and
 restrict the number of genetic algorithm iterations to \eqn{10} make
 \code{opt_args = list(optim = list(method = "Nelder-Mead"), 
@@ -848,7 +858,7 @@ gena = list(maxiter = 10))}.
 
 If \code{estimator = "2step"} then it is possible to precalculate the first 
 step model with \code{\link[switchSelection]{msel}} function
-and pass it through the \code{formula} argument. It allows to experiment
+and pass it through the \code{formula} argument. It allows one to experiment
 with various \code{formula2} and \code{degrees} specifications without
 extra computational burden associated with the first step estimation.
 
@@ -865,7 +875,7 @@ Meijer and Wansbeek (2007).
 # Set seed for reproducibility
 set.seed(123)
 
-# Upload data
+# Load data
 data(cps)
 
 # Prepare the variable for education
@@ -1004,7 +1014,7 @@ cbind(true = cuts, estimate = cuts_est)
 # ---
 
 # Predict conditional probability of the dependent variable
-# equals to 2 for every observation in a sample.
+# equals 2 for every observation in a sample.
 # P(z = 2 | w)
 prob <- predict(model, group = 2, type = "prob")
 head(prob)
@@ -1041,8 +1051,8 @@ predict(model, group = 2,    type = "prob", newdata = newdata,
 
 # Estimate ordered logit model with a unit variance
 # that is just a matter of reparametrization i.e.,
-# do not affect signs and significance of the coefficients
-# and dot not affect at all the marginal effects
+# does not affect signs and significance of the coefficients
+# and does not affect at all the marginal effects
 logit <- msel(z ~ w1 + w2, data = data, marginal = list("logistic" = 0))
 summary(logit)
 
@@ -1128,7 +1138,7 @@ li <- gamma[1] * w1 + gamma[2] * w2
 # Linear predictor (index) of the variance equation
 li_het <- gamma_het[1] * w2 + gamma_het[2] * w3
 
-# Heteroscedastic stdandard deviation
+# Heteroscedastic standard deviation
 # i.e., value of the variance equation
 sd_het <- exp(li_het)
 
@@ -1187,8 +1197,8 @@ summary(test_result)
 # Estimation of the probabilities and marginal effects
 # ---
 
-# Predict probability of the dependent variable
-# equals to 2 for every observation in a sample
+# Predict probability that the dependent variable
+# equals 2 for every observation in a sample
 # P(z = 2 | w)
 prob <- predict(model, group = 2, type = "prob")
 head(prob)
@@ -1207,9 +1217,9 @@ newdata <- data.frame(z = c(1, 1),
   # probability P(z = 2 | w)
 predict(model, group = 2, type = "prob", newdata = newdata)
   # linear predictor (index)
-predict(model, type = "li", newdata = newdata)
+predict(model, type = "li", newdata = newdata, group = 0)
   # standard deviation
-predict(model, type = "sd", newdata = newdata)
+predict(model, type = "sd", newdata = newdata, group = 0)
   # marginal effect of w3 on P(z = 3 | w)
 predict(model, group = 3, type = "prob", newdata = newdata, me = "w3")
   # marginal effect of w2 on the standard error
@@ -1270,8 +1280,8 @@ li2 <- gamma2[1] * w2 + gamma2[2] * w3
 # Linear predictor (index) of the variance equation
 li2_het <- gamma2_het[1] * w2 + gamma2_het[2] * w4
 
-# Heteroscedastic stdandard deviation
-# i.e. value of variance equation
+# Heteroscedastic standard deviation
+# i.e., the value of the variance equation
 sd2_het <- exp(li2_het)
 
 # Latent variables
@@ -1310,7 +1320,7 @@ model <- msel(list(z1 ~ w1 + w2,
               data = data)
 summary(model)
 
-# Compare the estimates and true values of parameters
+# Compare the estimates and true values of the parameters
   # regression coefficients of the first equation
 gamma1_est <- coef(model, type = "coef", eq = 1)
 cbind(true = gamma1, estimate = gamma1_est)
@@ -1357,7 +1367,7 @@ newdata <- data.frame(z1 = c(1, 1),
   # probability P(z1 = 2, z2 = 0 | w)
 predict(model, group = c(2, 0), type = "prob", newdata = newdata)
   # linear predictor (index)
-predict(model, type = "li", newdata = newdata)  
+predict(model, type = "li", newdata = newdata, group = c(0, 0))  
   # marginal probability P(z2 = 1 | w)
 predict(model, group = c(-1, 1), type = "prob", newdata = newdata) 
   # marginal probability P(z1 = 3 | w)
@@ -1393,7 +1403,7 @@ model <- msel(list(z1 ~ w1 + w2,
               cov_type = "gop", data = data)
 summary(model)
 
-# Compare estimates and true values of the parameters
+# Compare the estimates and true values of the parameters
   # regression coefficients of the first equation
 gamma1_est <- coef(model, type = "coef", eq = 1)
 cbind(true = gamma1, estimate = gamma1_est)
@@ -1487,7 +1497,7 @@ table(z)
 # Observable continuous outcome such
 # that outcome 'y' is observable only 
 # when 'z > 1' and unobservable otherwise
-# i.e. when 'z <= 1' we code 'y' as 'NA'
+# i.e., when 'z <= 1' we code 'y' as 'NA'
 y         <- y_star
 y[z <= 1] <- NA
 
@@ -1497,7 +1507,7 @@ data <- data.frame(w1 = w1, w2 = w2, w3 = w3,
 
 # ---
 # Step 2
-# Estimation of parameters
+# Estimation of the parameters
 # ---
 
 # Estimation
@@ -1545,7 +1555,7 @@ predict(model, group = 0, group2 = 0, newdata = newdata)
 
 # ---
 # Step 4
-# Classic Heckman's two-step estimation procedure
+# The classic Heckman two-step estimation procedure
 # ---
 
 # Estimate the model by using the two-step estimator
@@ -1553,7 +1563,7 @@ model_ts <- msel(z ~ w1 + w2, y ~ w1 + w3,
                  data = data, estimator = "2step")
 summary(model_ts)
 
-# Check the estimates accuracy
+# Check the accuracy of the estimates
 tbl <- cbind(true    = beta, 
              ml      = model$coef2[[1]][1, ],
              twostep = model_ts$coef2[[1]][1, -4])  
@@ -1573,17 +1583,17 @@ model_Lee <- msel(z ~ w1 + w2,
                   marginal = list(logistic = NULL))
 summary(model_Lee)
 
-# One step estimation is also available as well
-# as more complex marginal distributions.
-# Consider random errors in selection equation
-# following PGN distribution with three parameters.
+# One-step estimation is available as well as
+# more complex marginal distributions.
+# Consider random errors in the selection equation
+# following a PGN distribution with three parameters.
 model_sp <- msel(z ~ w1 + w2, 
                  y ~ w1 + w3,
                  data = data, marginal = list(PGN = 3))
 summary(model_sp)
 
-# To additionally relax normality assumption of
-# random error of continuous equation it is possible
+# To additionally relax the normality assumption of
+# the random error of the continuous equation, it is possible
 # to use Newey's two-step procedure.
 model_Newey <- msel(z ~ w1 + w2, 
                     y ~ w1 + w3,
@@ -1672,7 +1682,7 @@ z[(z_star > cuts[2]) & (z_star <= cuts[3])] <- 2
 z[z_star > cuts[3]]                         <- 3
 table(z)
 
-# Observable continuous outcome such that y' is 
+# Observable continuous outcome such that y is 
 # observable in regime 1 when 'z = 1', 
 # observable in regime 0 when 'z <= 1',
 # unobservable           when 'z = 0'
@@ -1701,7 +1711,7 @@ model <- msel(list(z ~ w1 + w2 | w2 + w3),
                    data = data)
 summary(model)
 
-# Compare estimates and true values of parameters
+# Compare the estimates and true values of the parameters
   # regression coefficients of the ordinal equation
 gamma_est     <- coef(model, type = "coef",     eq = 1)
 gamma_het_est <- coef(model, type = "coef_var", eq = 1)
@@ -1881,9 +1891,9 @@ summary(model)
 # Compare estimates and true values of the parameters
   # regression coefficients of the first ordered equation
 gamma1_est      <- coef(model, type = "coef",     eq = 1)
-gamma1__het_est <- coef(model, type = "coef_var", eq = 1)
+gamma1_het_est <- coef(model, type = "coef_var", eq = 1)
 cbind(true = gamma1,     estimate = gamma1_est)
-cbind(true = gamma1_het, estimate = gamma1__het_est)
+cbind(true = gamma1_het, estimate = gamma1_het_est)
   # regression coefficients of the second ordered equation
 gamma2_est <- coef(model, type = "coef", eq = 2)
 cbind(true = gamma2, estimate = gamma2_est)
@@ -1938,7 +1948,7 @@ predict(model, group = c(2, 1), group2 = 1, newdata = newdata, me = "w3")
 # Two-step estimation procedure
 # ---
 
-# For a comparison reasons let's estimate the model
+# For comparison reasons, let's estimate the model
 # via the least squares
 model.ls.0 <- lm(y ~ w1 + w3 + w4,
                  data = data[!is.na(data$y) & (data$z1 == 1), ])
@@ -1955,7 +1965,7 @@ model_ts <-  msel(list(z1 ~ w1 + w2 | w2 + w3,
 summary(model_ts)
 
 # Use the two-step procedure with logistic marginal distributions
-# that is multivariate generalization of the Lee's method
+# that is a multivariate generalization of Lee's method
 model_Lee <-  msel(list(z1 ~ w1 + w2 | w2 + w3,
                         z2 ~ w1 + w3),
                    y ~ w1 + w3 + w4,
@@ -1963,7 +1973,7 @@ model_Lee <-  msel(list(z1 ~ w1 + w2 | w2 + w3,
                    groups    = groups,  groups2 = groups2,
                    estimator = "2step", data    = data)
                         
-# Apply the Newey's method
+# Apply Newey's method
 model_Newey <-  msel(list(z1 ~ w1 + w2 | w2 + w3,
                           z2 ~ w1 + w3),
                      y ~ w1 + w3 + w4,
@@ -1971,7 +1981,7 @@ model_Newey <-  msel(list(z1 ~ w1 + w2 | w2 + w3,
                      degrees = c(2, 3), groups = groups, groups2 = groups2,
                      estimator = "2step", data = data)
 
-# Compare accuracy of the methods
+# Compare the accuracy of the methods
   # beta0
 tbl0 <- cbind(true    = beta0, 
               ls      = coef(model.ls.0),
@@ -2093,16 +2103,15 @@ z2[z2_star > cuts2[1]] <- 1
 table(z1, z2)
 
 # Observable continuous outcome such that outcome 'y' is 
-# in regime 0  when 'z1 == 1', 
-# in regime 1  when 'z1 == 0' or 'z1 == 2',
+# in regime 0 when 'z1 == 1', 
+# in regime 1 when 'z1 == 0' or 'z1 == 2',
 # unobservable when 'z2 == 0'
 y          <- rep(NA, n)
 y[z1 == 1] <- y0_star[z1 == 1]
 y[z1 != 1] <- y1_star[z1 != 1]
 y[z2 == 0] <- NA
 
-#' # Observable continuous outcome such
-# that outcome 'g' is 
+# Observable continuous outcome such that outcome 'g' is 
 # in regime 0 when 'z1 == z2', 
 # in regime 1 when 'z1 > z2',
 # in regime 2 when 'z1 < z2',
@@ -2149,7 +2158,7 @@ model <- msel(list(z1 ~ w1 + w2 | w2 + w3, z2 ~ w1 + w3),
               groups = groups, groups2 = groups2, data = data)
 summary(model)
 
-# Compare estimates and true values of the parameters
+# Compare the estimates and true values of the parameters
   # regression coefficients of the first ordered equation
 gamma1_est     <- coef(model, type = "coef", eq = 1)
 gamma1_het_est <- coef(model, type = "coef_var", eq = 1)
@@ -2226,7 +2235,7 @@ predict(model, group   = c(2, 1), group2 = c(0, 1),
 # Two-step estimation procedure
 # ---
 
-# Provide manually selectivity terms
+# Manually provide selectivity terms
 model2 <- msel(list(z1 ~ w1 + w2 | w2 + w3, z2 ~ w1 + w3),
                list(y ~ w1 + w3 + w4 + 
                         lambda1 + lambda2 + I(lambda1 * lambda2), 
@@ -2308,7 +2317,7 @@ z2.star <- z2.li + u[, 2]
 y0.star <- y0.li + eps[, 1]
 y1.star <- y1.li + eps[, 2]
 
-# Obvservable variable as a dummy
+# Observable variable as a dummy
 z1 <- (z1.star > z2.star) & (z1.star > 0)
 z2 <- (z2.star > z1.star) & (z2.star > 0)
 z3 <- (z1 != 1) & (z2 != 1)
@@ -2344,7 +2353,11 @@ model <- msel(formula3  = z ~ x1 + x2, formula2 = y ~ x1 + x3,
               type3     = "probit")
 summary(model)
 
-# Compare estimates and true values of parameters
+# Get the coefficients of the selectivity terms
+coef_lambda0_est <- coef(model, type = "coef_lambda", eq2 = 1, regime = 0)
+coef_lambda1_est <- coef(model, type = "coef_lambda", eq2 = 1, regime = 1)
+
+# Compare the estimates and true values of the parameters
   # regression coefficients of the continuous equation
 beta0_est <- coef(model, type = "coef2", eq2 = 1, regime = 0)
 beta1_est <- coef(model, type = "coef2", eq2 = 1, regime = 1)
@@ -2361,32 +2374,32 @@ cbind(true = cor.z * sd.z2,
       est  = coef(model, type = "cov3", eq3 = c(0, 1)))
   # z1 and y0
 cbind(true = cor.z1y0 * sd.y0, 
-      est  = beta0_est["lambda1_mn"]) 
+      est  = coef_lambda0_est["lambda1_mn"]) 
   # z2 and y0
 cbind(true = cor.z2y0 * sd.y0, 
-      est  = beta0_est["lambda2_mn"])   
+      est  = coef_lambda0_est["lambda2_mn"])   
   # z1 and y1
 cbind(true = cor.z1y1 * sd.y1, 
-      est  = beta1_est["lambda1_mn"]) 
+      est  = coef_lambda1_est["lambda1_mn"]) 
   # z2 and y1
 cbind(true = cor.z2y1 * sd.y1, 
-      est  = beta1_est["lambda2_mn"]) 
+      est  = coef_lambda1_est["lambda2_mn"]) 
             
 # ---
 # Step 3
 # Predictions and marginal effects
 # ---  
 
-# Unconditional expectation E(y1 | w) for every observation in a sample
+# Unconditional expectation E(y1 | w) for every observation in the sample
 predict(model, type = "val", group2 = 1, group3 = -1)
 
-# Marginal effect of x1 on conditional expectation E(y0 | z = 1, w) 
+# The marginal effect of x1 on conditional expectation E(y0 | z = 1, w) 
 # for every observation in a sample
 predict(model, type = "val", group2 = 0, group3 = 1, me = "x1")    
 
 # Calculate predictions and marginal effects
 # for manually provided observations
-# using aforementioned models.
+# using the aforementioned models
 newdata <- data.frame(z  = c(1, 1), 
                       y  = c(1, 1), 
                       x1 = c(0.5, 0.2), 
@@ -2503,7 +2516,7 @@ model <- msel(formula3  = z ~ x1 + x2, formula2 = y ~ x1 + x3,
               type3     = "logit")
 summary(model)
 
-# Least squaes estimates (benchmark)
+# Least squares estimates (benchmark)
 lm0 <- lm(y ~ x1 + x3, data = data[data$z == 0, ])
 lm1 <- lm(y ~ x1 + x3, data = data[data$z == 1, ])
 
@@ -2539,6 +2552,6 @@ Estimation of Gaussian multinomial endogenous switching model.
 Applied Econometrics, vol. 67, pages 121-143.
 
 E. Meijer, T. Wansbeek (2007). 
-The sample selection model from a method of moments perspecrive.
+The sample selection model from a method of moments perspective.
 Econometric Reviews, vol. 26(1), pages 25-51.
 }

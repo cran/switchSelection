@@ -23,7 +23,7 @@ sigma.msel <- function (object, use.fallback = TRUE, ...,
   {
     if (object$cov_type != "parametric")
     {
-      stop (paste0("Availabe only for maximum-likelihood estimator or if ",
+      stop (paste0("Available only for maximum-likelihood estimator or if ",
                    "parametric estimator of the asymptotic covariance matrix ",
                    "is used."))
     }

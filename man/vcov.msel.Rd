@@ -10,7 +10,8 @@
   type = object$cov_type,
   n_cores = object$other$n_cores,
   n_sim = object$other$n_sim,
-  recalculate = FALSE
+  recalculate = FALSE,
+  cluster = NULL
 )
 }
 \arguments{
@@ -23,7 +24,7 @@ matrix estimator. It takes the same values as \code{cov_type} parameter of
 the \code{\link[switchSelection]{msel}} function.}
 
 \item{n_cores}{positive integer representing the number of CPU cores used for 
-parallel computing. If possible it is highly recommend to set it equal to
+parallel computing. If possible it is highly recommended to set it equal to
 the number of available physical cores especially when the system of
 ordered equations has 2 or 3 equations.}
 
@@ -34,10 +35,18 @@ algorithms will be used to calculate multivariate normal probabilities.}
 \item{recalculate}{logical; if \code{TRUE} then covariance matrix will be
 recalculated even if 'type' is the same as 'cov_type' input argument
 of the model.}
+
+\item{cluster}{an object which takes the same values as the \code{cluster} 
+argument of the \code{\link[switchSelection]{msel}} function. 
+The only exception is \code{cluster = NULL} which implies 
+\code{cluster = object$cluster}.}
 }
 \value{
 Returns numeric matrix which represents estimate of the asymptotic 
-covariance matrix of model's parameters.
+covariance matrix of model's parameters. If \code{object} is a list of
+models then rows and columns of this matrix will have names \code{"mipj"}
+indicating that corresponding element is associated with \code{j}-th 
+parameter of the \code{i}-th model.
 }
 \description{
 Return the variance-covariance matrix of the parameters of
@@ -48,4 +57,8 @@ Argument \code{type} is closely related to the argument
 \code{cov_type} of \code{\link[switchSelection]{msel}} function. 
 See 'Details' and 'Usage' sections of \code{\link[switchSelection]{msel}} 
 for more information on \code{cov_type} argument.
+
+The user may also estimate asymptotic covariance matrix of the parameters
+of several models. For more information, see paragraph 'Cross-model tests'
+in 'Details' section of \code{\link[switchSelection]{test_msel}}.
 }

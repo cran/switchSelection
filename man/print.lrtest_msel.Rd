@@ -7,7 +7,7 @@
 \method{print}{lrtest_msel}(x, ...)
 }
 \arguments{
-\item{x}{object of class "lrtest_msel".}
+\item{x}{object of class "summary.lrtest_msel".}
 
 \item{...}{further arguments (currently ignored).}
 }

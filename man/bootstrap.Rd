@@ -19,27 +19,27 @@ bootstrap_msel(
 bootstrap_combine_msel(...)
 }
 \arguments{
-\item{object}{an object of class 'msel'.}
+\item{object}{an object of class 'msel' or a list of such objects.}
 
 \item{iter}{the number of bootstrap iterations.}
 
-\item{opt_type}{the same as \code{opt_type} argument of the
+\item{opt_type}{the same as the \code{opt_type} argument of the 
 \code{\link[switchSelection]{msel}} function.}
 
-\item{opt_args}{the same as \code{opt_args} argument of the
-\code{\link[switchSelection]{msel}} functions.}
+\item{opt_args}{the same as the \code{opt_args} argument of the 
+\code{\link[switchSelection]{msel}} function.}
 
 \item{is_ind}{logical; if \code{TRUE} then the function also returns a
 numeric matrix of indexes of observations used in the bootstrap samples.}
 
-\item{n_sim}{the same as \code{n_sim} argument of the
+\item{n_sim}{the same as the \code{n_sim} argument of the 
 \code{\link[switchSelection]{msel}} function.}
 
-\item{n_cores}{the same as \code{n_cores} argument of the 
+\item{n_cores}{the same as the \code{n_cores} argument of the 
 \code{\link[switchSelection]{msel}} function.}
 
-\item{...}{objects returned by function 
-\code{\link[switchSelection]{bootstrap_msel}} to be combined into a
+\item{...}{objects returned by the function 
+\code{\link[switchSelection]{bootstrap_msel}} to be combined into a 
 single object.}
 }
 \value{
@@ -48,14 +48,14 @@ returns an object of class \code{"bootstrap_msel"}.
 This object is a list which may contain the following elements:
 \itemize{
 \item \code{par} - a numeric matrix such that \code{par[b, ]} is a vector 
-of the estimates of the parameters of the model estimated via
-\code{\link[switchSelection]{msel}} function on the \code{b}-th bootstrap
-sample.
+of the estimates of the parameters of the model estimated via the 
+\code{\link[switchSelection]{msel}} function on the \code{b}-th 
+bootstrap sample.
 \item \code{iter} - the number of the bootstrap iterations.
 \item \code{cov} - bootstrap estimate of the covariance matrix which 
-equals to \code{cov(par)}.
+equals \code{cov(par)}
 \item \code{ind} - a numeric matrix such that \code{ind[, b]} stores the 
-indexes of the observations from \code{object$data} included into the 
+indexes of the observations from \code{object$data} included in the 
 \code{b}-th bootstrap sample.
 }
 Function \code{\link[switchSelection]{bootstrap_combine_msel}} returns the 
@@ -73,12 +73,22 @@ combine several objects of class \code{'bootstrap_msel'}.
 \details{
 The function generates \code{iter} bootstrap samples and 
 estimates the parameters \eqn{\theta} of the model by using each of
-these samples. Estimate \eqn{\hat{\theta}^{(b)}} from the \eqn{b}-th of 
+these samples. The estimate \eqn{\hat{\theta}^{(b)}} from the \eqn{b}-th of 
 these samples is stored as the \code{b}-th row of the numeric matrix
 \code{par} which is an element of the returned object.
 
-Use \code{\link[switchSelection]{update_msel}} function to
+Use the \code{\link[switchSelection]{update_msel}} function to
 transfer the bootstrap estimates to the object of class \code{'msel'}.
+
+Argument \code{object} may be a list of objects of class \code{'msel'}.
+Then the function returns an object of class 
+\code{'crossmodel_bootstrap_msel'} which is a list \code{out} such that 
+\code{out[[j]]} is an object of class \code{'bootstrap_msel'}. Notice that
+all the models will be estimated on the same bootstrap samples. That is,
+\code{out[[j]]$ind} is the same for each model \code{j}. Specifically, 
+it may be useful for cross-model hypothesis testing.
+
+See \code{\link[switchSelection]{test_msel}} for hypothesis testing.
 }
 \examples{
 # -------------------------------
@@ -126,7 +136,7 @@ z[z_star > cuts[3]]                         <- 3
 table(z)
 
 # Data
-data <- data.frame(w1 = w1, w2 = w2, z = z)
+data <- data.frame(w1 = w1, w2 = w2, z = z, crossind = 1:n)
 
 # ---
 # Step 2
@@ -142,7 +152,7 @@ summary(model)
 # Bootstrap
 # ---
 
-# Perform bootstrap
+# Perform the bootstrap
 bootstrap <- bootstrap_msel(model)
 
 # Test the hypothesis that H0: gamma[2] = -2gamma[1]
@@ -161,7 +171,7 @@ b <- test_msel(object    = model,
                bootstrap = bootstrap)
 summary(b)
 
-# Replicate the analysis with the additional 20 bootstrap iterations
+# Replicate the analysis with an additional 20 bootstrap iterations
 bootstrap2    <- bootstrap_msel(model, iter = 20)
 bootstrap_new <- bootstrap_combine_msel(bootstrap, bootstrap2)
 b2 <- test_msel(object    = model, 
@@ -170,8 +180,36 @@ b2 <- test_msel(object    = model,
                 method    = "bootstrap",
                 ci        = "percentile",
                 se_type   = "bootstrap",
-                bootstrap = bootstrap)
+                bootstrap = bootstrap_new)
 summary(b2)
+
+# ---
+# Step 4
+# Cross-model test
+# ---
+
+# Estimate restricted model
+model2 <- msel(formula = z ~ w1, data = data)
+
+# Perform a bootstrap for two models
+bootstrap2 <- bootstrap_msel(list(model, model2), iter = 10)
+
+# Test the hypothesis that the coefficients in both models are the same
+fn_test2 <- function(object)
+{
+  coef1 <- coef(object[[1]], eq = 1)[1]
+  coef2 <- coef(object[[2]], eq = 1)[1]
+  return(coef1 - coef2)
+}
+b <- test_msel(object    = list(model, model2), 
+               fn        = fn_test2,
+               test      = "t", 
+               method    = "bootstrap",
+               ci        = "percentile",
+               se_type   = "bootstrap",
+               bootstrap = bootstrap2)
+summary(b)
+
 }
  
 }

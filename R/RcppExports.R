@@ -14,7 +14,7 @@ matrixInMatrix <- function(x, y) {
 #' probit model.
 #' @param par vector of parameters.
 #' @param control_lnL list with some additional parameters.
-#' @param out_type string represeint the output type of the function.
+#' @param out_type string representing the output type of the function.
 #' @param n_sim the number of random draws for multivariate 
 #' normal probabilities.
 #' @param n_cores the number of cores to be used. 

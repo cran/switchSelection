@@ -17,7 +17,7 @@
 #' Similarly for \code{model2}. 
 #' 
 #' If \code{model1} or \code{model2} is a list then the number of observations 
-#' of the associated models are calculated as the sum of the numbers of 
+#' of the associated models is calculated as the sum of the numbers of 
 #' observations of the models in corresponding lists.
 #' However sometimes it may be misleading. For example, when bivariate probit
 #' model (full) is tested against two independent probit models (restricted). 
@@ -132,7 +132,7 @@ lrtest_msel <- function(model1, model2)
 
 #' Print Method for Likelihood Ratio Test
 #' @description Prints summary for an object of class 'lrtest_msel'.
-#' @param x object of class "lrtest_msel".
+#' @param x object of class "summary.lrtest_msel".
 #' @param ... further arguments (currently ignored).
 #' @return The function returns the input argument \code{x}.
 print.lrtest_msel <- function(x, ...)
@@ -187,7 +187,7 @@ summary.lrtest_msel <- function(object, ...)
 #' @param x object of class "lrtest_msel"
 #' @param ... further arguments (currently ignored)
 #' @return The function returns input argument \code{x} changing
-#' it's class to \code{lrtest_msel}.
+#' its class to \code{lrtest_msel}.
 print.summary.lrtest_msel <- function(x, ...)
 {
   class(x) <- "lrtest_msel"

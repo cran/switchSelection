@@ -23,7 +23,7 @@ names_msel <- function(object, data = NULL)
   
   if (is.null(data))
   {
-    object <- object$data
+    data <- object$data
   }
   n_obs <- nrow(data)
   

@@ -48,16 +48,26 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
                                reltol = 1e-10,
                                abstol = 1e-10)
   }
+  if (!hasName(optim_args, "disable"))
+  {
+    optim_args$disable = FALSE
+  }
     
   # likelihood arguments
   optim_args$n_sim <- n_sim
   optim_args$n_cores <- n_cores
   optim_args$control_lnL <- control_lnL
   optim_args$regularization <- regularization
+  
   # Perform the optimization routine
-  opt <- do.call(what = optim, args = optim_args)
+  opt <- list(par = start)
+  if (!optim_args$disable)
+  {
+    optim_args$disable <- NULL
+    opt                <- do.call(what = optim, args = optim_args)
+  }
     
-  # Add genetic optimization if need
+  # Add genetic optimization if needed
   if (opt_type == "gena")
   {
     # Initialize list to store arguments
@@ -94,7 +104,7 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
     }
     if (!hasName(gena_args, "upper"))
     {
-      gena_args$upper <- -2 * abs(opt$par)
+      gena_args$upper <- 2 * abs(opt$par)
     }
     if (!hasName(gena_args, "hybrid.prob"))
     {
@@ -102,16 +112,16 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
     }
       
     # likelihood arguments
-    gena_args$n_sim <- n_sim
-    gena_args$n_cores <- n_cores
-    gena_args$control_lnL <- control_lnL
+    gena_args$n_sim          <- n_sim
+    gena_args$n_cores        <- n_cores
+    gena_args$control_lnL    <- control_lnL
     gena_args$regularization <- regularization
       
     # Perform the optimization routine
     opt <- do.call(what = gena::gena, args = gena_args)
   }
     
-  # Add particle swarm optimization if need
+  # Add particle swarm optimization if needed
   if (opt_type == "pso")
   {
     # Initialize list to store arguments
@@ -123,8 +133,10 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
       
     # obligatory arguments
     if (type == "msel")
-    pso_args$fn <- lnL_msel
-    pso_args$gr <- grad_msel
+    {
+      pso_args$fn <- lnL_msel
+      pso_args$gr <- grad_msel
+    }
       
     # technical arguments
     if (!hasName(pso_args, "pop.initial"))
@@ -153,9 +165,9 @@ opt_switchSelection <- function(opt_args = NULL, control_lnL,
     }
       
     # likelihood arguments
-    pso_args$n_sim <- n_sim
-    pso_args$n_cores <- n_cores
-    pso_args$control_lnL <- control_lnL
+    pso_args$n_sim          <- n_sim
+    pso_args$n_cores        <- n_cores
+    pso_args$control_lnL    <- control_lnL
     pso_args$regularization <- regularization
       
     # Perform the optimization routine

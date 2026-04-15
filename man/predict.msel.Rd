@@ -17,7 +17,8 @@
   eps = NULL,
   control = list(),
   test = FALSE,
-  exogenous = NULL
+  exogenous = NULL,
+  factors = NULL
 )
 }
 \arguments{
@@ -49,7 +50,10 @@ ignored.}
 See 'Details' for more information.}
 
 \item{me}{a string representing the name of the variable for which marginal
-effect should be estimated. See 'Details' for more information.}
+effect should be estimated. It may also equal to a character vector. Then
+the function returns a numeric matrix which \code{i}-th column contains
+estimates of the marginal effects with respect to \code{marginal[i]}.
+See 'Details' for more information.}
 
 \item{eps}{a numeric vector of length 1 or 2 used for calculation of
 the marginal effects. See 'Details' for more information.}
@@ -71,12 +75,23 @@ be exogenously assigned to the variable \code{names(exogenous)[[i]]} in
 \code{newdata} i.e., \code{newdata[, names(exogenous)[i]] <- exogenous[[i]]}.
 If \code{newdata} is \code{NULL} and \code{exogenous} is not \code{NULL} then
 \code{newdata} is set to \code{object$data}.
-This argument is especially useful for the casual inference when some 
+This argument is especially useful for the causal inference when some 
 endogenous (dependent) variables should be exogenously assigned with some 
 values i.e., in the right hand side of the \code{formula}, \code{formula2} 
-and \code{formula3}. The purpose of \code{exogeneous} argument is just a 
+and \code{formula3}. The purpose of the \code{exogeneous} argument is just a 
 convenience so equivalently it is possible to exogenously provide the values
 to variables via the \code{newdata} argument.}
+
+\item{factors}{a list which elements are character vectors representing
+the variables which should be treated as factors when estimation of 
+marginal effects is performed. It is assumed that if one of these variables
+equals 1 then other are set to 0. Specifically, if \code{me[i]} is an 
+element of \code{factors[[j]]} for some \code{j}, then when estimating 
+marginal effect respect to \code{me[i]}, the value of \code{eps} set to 
+\code{c(0, 1)} and the  values of other variables in \code{factors[[j]]} are
+set (internally by the function) to \code{0}.
+If \code{length(me) = 1} then \code{factors} may be just a 
+character vector (not a list).}
 }
 \value{
 This function returns predictions for each row of \code{newdata}
@@ -108,25 +123,25 @@ outcomes then to estimate
 \strong{Linear predictors (indexes) of the multivariate ordinal equations}
 
 If \code{type = "li"} or \code{type = "lp"} then the function returns a 
-matrix which columns are linear predictors (indexes) of the corresponding 
+matrix whose columns are linear predictors (indexes) of the corresponding 
 equations. If \code{group[j] = -1} then linear predictors (indexes) 
 associated with the \code{j}-th ordinal equation will be omitted from the 
 output.
 
 For example, if \code{group = c(0, -1, 1)} then the function returns a
-matrix which first column is \eqn{w_{1i}\hat{\gamma}_{1}} and the second 
+matrix whose first column is \eqn{w_{1i}\hat{\gamma}_{1}} and the second 
 column is \eqn{w_{3i}\hat{\gamma}_{3}}.
 
 \strong{Standard deviations of the multivariate ordinal equations}
 
-If \code{type = "sd"} then the function returns a matrix which columns are
+If \code{type = "sd"} then the function returns a matrix whose columns are
 the estimates of the standard deviations of the random errors for 
 the corresponding equations. 
 If \code{group[j] = -1} then the standard deviations associated with the 
 \code{j}-th ordinal equation will be omitted from the output.
 
 For example, if \code{group = c(0, -1, 1)} then the function returns a
-matrix which first column is \eqn{\hat{\sigma}_{1i}^{*}} and the second 
+matrix whose first column is \eqn{\hat{\sigma}_{1i}^{*}} and the second 
 column is \eqn{\hat{\sigma}_{3i}^{*}}.
 
 \strong{Predictions of the continuous outcomes}
@@ -148,14 +163,14 @@ To estimate \eqn{E(y_{0i}|x_{i}, z_{2i} = 1)} set
 Suppose that there are two continuous \eqn{y_{i}^{(1)}},
 \eqn{y_{i}^{(2)}} and two ordinal \eqn{z_{1i}}, \eqn{z_{2i}} equations.
 If \code{group2 = c(1, 3)} and \code{group = c(3, 0)} then the function 
-returns a matrix which first column are the estimates of 
+returns a matrix whose first column contains the estimates of 
 \eqn{E(y_{1i}^{(1)}|z_{1i} = 3, z_{2i} = 0, x_{i}^{(1)})} and the second 
-column are the estimates of 
+column contains the estimates of 
 \eqn{E(y_{3i}^{(2)}|z_{1i} = 3, z_{2i} = 0, x_{i}^{(2)})}.
 
 \strong{Selectivity terms}
 
-If \code{type = "lambda"} then the function returns a matrix which 
+If \code{type = "lambda"} then the function returns a matrix whose
 \code{j}-th column is a numeric vector of estimates of the selectivity terms 
 \eqn{\lambda_{ji}} associated with the ordinal equations. 
 Similarly if \code{type = "lambda_mn"} then the
@@ -171,33 +186,33 @@ a vector of the estimates of the probabilities
 \strong{Linear indexes (predictors) of the multinomial equation}
 
 If \code{type = "li_mn"} or \code{type = "lp_mn"} then the function returns a 
-numeric matrix which \code{j}-th column is a numeric vector of estimates of 
+numeric matrix whose \code{j}-th column is a numeric vector of estimates of 
 the linear predictor (index) associated with the \code{(j-1)}-th alternative 
 \eqn{\tilde{w}_{i}\tilde{\gamma}_{(j-1)}}.
 
 \strong{Estimation of the marginal effects}
 
-If \code{me} is provided then the function returns marginal effect
-of variable \code{me} respect to the statistic determined by the \code{type}
-argument. 
+If \code{me} is provided then the function returns the marginal effect
+of variable \code{me} with respect to the statistic determined by 
+the \code{type} argument. 
 
 For example, if \code{me = "x1"} and \code{type = "prob"} then the function 
 returns a marginal effect of \code{x1} on the corresponding probability 
 i.e., one that would be estimated if \code{me} is \code{NULL}.
 
-If \code{length(eps) = 1} then \code{eps} is an increment in 
+If \code{length(eps) = 1} then \code{eps} is an increment in the 
 numeric differentiation procedure. 
 If \code{eps} is \code{NULL} then this increment will be selected 
-automatically taking into account scaling of variables. 
+automatically taking into account the scaling of the variables. 
 If \code{length(eps) = 2} then marginal effects will be estimated as the
-difference of predicted value when variable \code{me} equals \code{eps[2]}
-and \code{eps[1]} correspondingly. 
+difference between predicted values when variable \code{me} equals 
+\code{eps[2]} and \code{eps[1]}, respectively. 
 
 For example, suppose that 
 \code{type = "prob"}, \code{me = "x1"}, \code{given_ind = 3} and
-\code{groups = c(2, -1, 0)}. Then if \code{eps} is a \code{NULL} or a 
+\code{groups = c(2, -1, 0)}. Then if \code{eps} is \code{NULL} or a 
 small number (something like \code{eps = 0.0001}) then the following marginal
-effect will be estimated (via the numeric differentiation):
+effect will be estimated (via numeric differentiation):
 \deqn{\frac{\partial P(z_{1i}=2 | z_{3i} = 0)}{\partial x_{1i}}.}
 If \code{eps = c(1, 3)} then the function estimates the following difference
 (useful for estimation of marginal effects of ordered covariates):

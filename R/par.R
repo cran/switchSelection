@@ -20,6 +20,7 @@ par_msel <- function(object, par, type = "par")
   marginal_par_ind <- object$ind$marginal_par
   marginal_par_n   <- object$control_lnL$marginal_par_n
   sigma_omit       <- object$control_lnL$sigma_omit
+  cov2_omit        <- object$other$cov2_omit
   coef3_ind        <- object$ind$coef3
   y_names          <- object$other$y_names
   z_names          <- object$other$z_names
@@ -100,10 +101,11 @@ par_msel <- function(object, par, type = "par")
     cov2 <- vector(mode = "list", length = n_eq2)
     for (i in 1:n_eq2)
     {
-      cov2[[i]] <- matrix(nrow = n_regimes[i], ncol = n_eq)
+      cov2[[i]] <- matrix(0, nrow = n_regimes[i], ncol = n_eq)
       for (j in 1:n_regimes[i])
       {
-        cov2[[i]][j ,] <- par[cov2_ind[[i]][j ,]]
+        cov2[[i]][j, cov2_omit[[i]][j, ] == 0] <- par[
+          cov2_ind[[i]][j, cov2_omit[[i]][j, ] == 0]]
       }
       rownames(cov2[[i]]) <- paste0("regime ", 0:(n_regimes[i] - 1))
       colnames(cov2[[i]]) <- z_names

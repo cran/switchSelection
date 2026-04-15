@@ -10,11 +10,11 @@ update_msel(object, par)
 \item{object}{an object of class \code{'msel'}.}
 
 \item{par}{a vector of parameters which substitutes \code{object$par} and
-used to update the estimates i.e., \code{object$coef}, \code{object$cuts} and
-others.}
+is used to update the estimates i.e., \code{object$coef}, \code{object$cuts} 
+and others.}
 }
 \value{
-This function returns an object \code{object} of class \code{'msel'}
+This function returns an object of class \code{'msel'}
 in which \code{object$par} is substituted with \code{par}. Also, \code{par} 
 is used to update the estimates i.e., \code{object$coef}, \code{object$cuts} 
 and others.

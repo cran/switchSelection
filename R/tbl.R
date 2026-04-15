@@ -43,6 +43,7 @@ tbl_msel <- function(object, par = NULL, vcov = NULL)
   coef2_ind        <- object$ind$coef2
   var2_ind         <- object$ind$var2
   cov2_ind         <- object$ind$cov2
+  cov2_omit        <- object$other$cov2_omit
   sigma2_ind       <- object$ind$sigma2
   sigma3_ind       <- object$ind$sigma3
   sigma3_ind_mat   <- object$ind$sigma3_mat
@@ -66,6 +67,21 @@ tbl_msel <- function(object, par = NULL, vcov = NULL)
     p_value[i] <- 2 * min(pnorm(z_value[i]), 1 - pnorm(z_value[i]))
   }
   
+  # P-values of the one sided test for the variances
+  if(is2)
+  {
+    for (i in 1:n_eq2)
+    {
+      if (estimator != "2step")
+      {
+        for (j in var2_ind[[i]])
+        {
+          p_value[j] <- 1 - pnorm(z_value[j])
+        }
+      }
+    }
+  }
+  
   # Construct output table
   tbl_coef         <- vector(mode = "list", length = n_eq)
   tbl_coef_var     <- vector(mode = "list", length = n_eq)
@@ -76,9 +92,9 @@ tbl_msel <- function(object, par = NULL, vcov = NULL)
   tbl_var2         <- vector(mode = "list", length = n_eq2)
   tbl_cov2         <- vector(mode = "list", length = n_eq2)
   tbl_sigma2       <- vector(mode = "list", length = n_eq2 * (n_eq2 - 1) / 2)
-  tbl_marginal_par <- NULL
-  tbl_coef3        <- NULL
-  tbl_sigma3       <- NULL
+  tbl_marginal_par <- NA
+  tbl_coef3        <- NA
+  tbl_sigma3       <- NA
   
   # Ordered equations
   if (is1)
@@ -117,10 +133,10 @@ tbl_msel <- function(object, par = NULL, vcov = NULL)
   }
   
   # covariance matrix of ordered equations
-  tbl_sigma <- NULL
+  tbl_sigma <- NA
   if (is1)
   {
-    if (n_eq >= 2)
+    if ((n_eq >= 2) & (length(sigma_vec_ind) > 0))
     {
       sigma_vec_names <- paste0("cov(", 
                                 z_names[sigma_vec_ind[, 1, drop = FALSE]], ", ",
@@ -167,12 +183,13 @@ tbl_msel <- function(object, par = NULL, vcov = NULL)
         # covariances with ordered equations
         if (is1 & (estimator == "ml"))
         {
-          tbl_cov2[[i]][[j]] <- as.matrix(cbind(Estimate = cov2[[i]][j, ],
-                                                 Std_Error = se[cov2_ind[[i]][j, ]],
-                                                 z_value = z_value[cov2_ind[[i]][j, ]],
-                                                 ind = cov2_ind[[i]][j, ],
-                                                 p_value = p_value[cov2_ind[[i]][j, ]]))
-          rownames(tbl_cov2[[i]][[j]]) <- z_names
+          tbl_cov2[[i]][[j]] <- as.matrix(cbind(
+            Estimate  = cov2[[i]][j, cov2_omit[[i]][j, ] == 0],
+            Std_Error = se[cov2_ind[[i]][j, cov2_omit[[i]][j, ]  == 0]],
+            z_value   = z_value[cov2_ind[[i]][j, cov2_omit[[i]][j, ]  == 0]],
+            ind       = cov2_ind[[i]][j, cov2_omit[[i]][j, ]  == 0],
+            p_value   = p_value[cov2_ind[[i]][j, cov2_omit[[i]][j, ]  == 0]]))
+          rownames(tbl_cov2[[i]][[j]]) <- z_names[!cov2_omit[[i]][j, ] ]
           names(tbl_coef2[[i]]) <- paste0("regime ", 0:(n_regimes[i] - 1))
         }
       }

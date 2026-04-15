@@ -13,7 +13,7 @@
 }
 \value{
 The function returns input argument \code{x} changing
-it's class to \code{lrtest_msel}.
+its class to \code{lrtest_msel}.
 }
 \description{
 Prints summary for an object of class 'lrtest_msel'.

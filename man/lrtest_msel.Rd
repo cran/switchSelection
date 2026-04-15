@@ -45,7 +45,7 @@ of degrees of freedom and log-likelihoods of the models in this list.
 Similarly for \code{model2}. 
 
 If \code{model1} or \code{model2} is a list then the number of observations 
-of the associated models are calculated as the sum of the numbers of 
+of the associated models is calculated as the sum of the numbers of 
 observations of the models in corresponding lists.
 However sometimes it may be misleading. For example, when bivariate probit
 model (full) is tested against two independent probit models (restricted). 

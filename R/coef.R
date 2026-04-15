@@ -8,10 +8,10 @@
 #' multinomial equation.
 #' @param regime an integer representing a regime of the continuous equation.
 #' @param type a character representing a type of the output. Possible options
-#' are \code{"coef"}, \code{"coef2"}, \code{coef_lambda}, 
+#' are \code{"coef"}, \code{"coef2"}, \code{"coef_lambda"}, 
 #' \code{"coef_var"}, \code{"coef3"}, \code{"cuts"}, \code{"cov"}, 
-#' \code{"cov1"}, \code{"var"}, \code{"cov2"}, \code{"cov3"}, 
-#' and \code{marginal}.
+#' \code{"cov1"}, \code{"cov12"}, \code{"var"}, \code{"cov2"}, \code{"cov3"}, 
+#' and \code{"marginal"}.
 #' See 'Details' for additional information.
 #' @template coef_msel_details_Template
 #' @returns See 'Details' section.
@@ -97,7 +97,7 @@ coef.msel <- function (object, ...,
     warning("It is assumed that 'type' is 'cov3'.")
   }
   
-  # Convert eq into numeric if need
+  # Convert eq into numeric if needed
   if (is1)
   {
     if (!is.null(eq))
@@ -113,7 +113,7 @@ coef.msel <- function (object, ...,
     }
   }
   
-  # Convert eq2 into numeric if need
+  # Convert eq2 into numeric if needed
   if (is2)
   {
     if (!is.null(eq2))
@@ -129,7 +129,7 @@ coef.msel <- function (object, ...,
     }
   }
   
-  # Convert eq3 into numeric if need
+  # Convert eq3 into numeric if needed
   if (is3)
   {
     if (!is.null(eq3))

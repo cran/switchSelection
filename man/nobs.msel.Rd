@@ -19,6 +19,6 @@ Extract the number of observations from a model fit
 of the \code{\link[switchSelection]{msel}} function.
 }
 \details{
-Unobservable values of continuous equations are included into
+Unobservable values of continuous equations are included in
 the number of observations.
 }

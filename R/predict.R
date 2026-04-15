@@ -15,7 +15,8 @@ predict.msel <- function(object, ...,
                          eps       = NULL,
                          control   = list(),
                          test      = FALSE,
-                         exogenous = NULL)
+                         exogenous = NULL,
+                         factors   = NULL)
 {
   # -------------------------------------------------------
   # Deal with the data and the variables
@@ -44,7 +45,7 @@ predict.msel <- function(object, ...,
   estimator <- object$estimator
   type3     <- object$type3
   
-  # Provide 'data' as 'newdata' if need
+  # Provide 'data' as 'newdata' if needed
   is_newdata <- TRUE
   if (is.null(newdata))
   {
@@ -66,10 +67,18 @@ predict.msel <- function(object, ...,
     newdata    <- exogenous_fn(exogenous = exogenous, newdata = newdata)
     is_newdata <- TRUE
   }
+  
+  # Determine whether recalculation of selectivity terms is required
+  is_recalculate_lambda <- TRUE
+  if (hasName(control, "is_recalculate_lambda"))
+  {
+    is_recalculate_lambda <- control$is_recalculate_lambda
+  }
 
   # Recalculate selectivity terms for the two-step estimator
   if ((type == "val") & (estimator == "2step") & 
-      ((is1 & !is_na_group[1]) | (is3 & !is_na_group[3])))
+      ((is1 & !is_na_group[1]) | (is3 & !is_na_group[3])) & 
+      is_recalculate_lambda)
   {
     # Set newdata
     is_newdata <- TRUE
@@ -197,7 +206,7 @@ predict.msel <- function(object, ...,
     n_groups <- object$other$n_groups
     ind_g    <- object$other$ind_g
     
-    # Change the groups related data if need
+    # Change the groups related data if needed
     if (is_newdata)
     {
       groups_list <- groups_msel(object  = object, data    = newdata, 
@@ -314,23 +323,23 @@ predict.msel <- function(object, ...,
   {
     if (any((group %% 1) != 0))
     {
-      stop(paste0("Invalid 'group' argument. Please, insure that 'group' is ",
+      stop(paste0("Invalid 'group' argument. Please, ensure that 'group' is ",
                   "a vector of integers.\n"))
     }
     if (length(group) != n_eq)
     {
-      stop(paste0("Invalid 'group' argument. Please, insure that length ",
+      stop(paste0("Invalid 'group' argument. Please, ensure that length ",
                   "of 'group' equals to the number of ordered equations i.e. ",
                   "'length(group) == length(formula)'.\n"))
     }
     if (any(group < -1))
     {
-      stop(paste0("Invalid 'group' argument. Please, insure that it ", 
+      stop(paste0("Invalid 'group' argument. Please, ensure that it ", 
                   "does not contain any negative values other than -1.\n"))
     }
     if (any(group >= n_groups))
     {
-      stop(paste0("Invalid 'group' argument. Please, insure that it ", 
+      stop(paste0("Invalid 'group' argument. Please, ensure that it ", 
                   "does not contain any values greater than the number of ", 
                   "the maximum category of corresponding equation.\n"))
     }
@@ -353,18 +362,18 @@ predict.msel <- function(object, ...,
   {
     if (((group3 %% 1) != 0) & length(group3) > 1)
     {
-      stop(paste0("Invalid 'group3' argument. Please, insure that 'group3' is ",
+      stop(paste0("Invalid 'group3' argument. Please, ensure that 'group3' is ",
                   "an integer.\n"))
     }
     if (any(group3 < -1))
     {
-      stop(paste0("Invalid 'group3' argument. Please, insure that it ", 
+      stop(paste0("Invalid 'group3' argument. Please, ensure that it ", 
                   "is not a negative value different from -1.\n"))
     }
     if (group3 > (n_eq3 - 1))
     {
-      stop(paste0("Invalid 'group3' argument. Please, insure that its ", 
-                  "value is not larget than the number of the alternatives ",
+      stop(paste0("Invalid 'group3' argument. Please, ensure that its ", 
+                  "value is not larger than the number of alternatives ",
                   "in the multinomial equation.\n"))
     }
   }
@@ -448,64 +457,6 @@ predict.msel <- function(object, ...,
   }
   
   # -------------------------------------------------------
-  # Conditional probabilities
-  # -------------------------------------------------------
-  
-  # Calculate the conditional probabilities
-  if (length(given_ind) > 0)
-  {
-    if (length(given_ind) >= n_eq_g)
-    {
-      stop(paste("At least one component should be unconditioned.",
-                 "Please, insure that 'length(given_ind)' is smaller than",
-                 "the number of observable equations."))
-    }
-    
-    if (type != "prob")
-    {
-      warning(paste0("Since 'given_ind' has been provided then 'type'",
-                     "will be coerced to 'prob'."))
-    }
-    
-    group_given             <- group
-    group_given[-given_ind] <- -1
-    
-    # Probability of the intersection
-    p_intersection <- predict(object, 
-                              newdata = newdata, 
-                              type    = "prob",
-                              group   = group,
-                              group3  = group3,
-                              control = control)
-    
-    # Probability of the condition
-    p_given <- predict(object, 
-                       newdata = newdata, 
-                       type    = "prob",
-                       group   = group_given,
-                       group3  = group3,
-                       control = control)
-    
-    # Conditional probability
-    p_cond <- p_intersection / p_given
-    
-    # Provide the name for the conditional probability
-    is_eq_ng            <- is_eq
-    is_eq_ng[given_ind] <- FALSE
-    colnames(p_cond)[1] <- paste0("P(",
-                                  paste0(object$other$z_names[is_eq_ng], "=",
-                                         group[is_eq_ng], collapse = ", "),
-                                  "|",
-                                  paste0(object$other$z_names[given_ind], "=",
-                                         group[given_ind], collapse = ", "),
-                                  ")")
-    rownames(p_cond)   <- 1:length(p_cond)
-    
-    # Return the results
-    return(p_cond)
-  }
-  
-  # -------------------------------------------------------
   # Marginal effects
   # -------------------------------------------------------
   
@@ -516,26 +467,71 @@ predict.msel <- function(object, ...,
     n_me <- length(me)
     if (n_me > 1)
     {
-      list_return <- list()
+      # Remake factors variable
+      if (!is.list(factors))
+      {
+        factors <- list(factors)
+      }
+      n_factors <- length(factors)
+      factors0  <- vector(mode = "list", length = n_me)
       for (i in 1:n_me)
       {
-        list_return[[me[i]]] <- predict(object, ..., 
-                                        newdata   = newdata,
-                                        given_ind = given_ind, 
-                                        group     = group,
-                                        group3    = group3,
-                                        type      = type, 
-                                        me        = me[i], 
-                                        eps       = eps,
-                                        control   = control)
+        if (n_factors != 0)
+        {
+          for (j in 1:n_factors)
+          {
+            if (me[i] %in% factors[[j]])
+            {
+              factors0[[i]] <- factors[[j]]
+            }
+          }
+        }
       }
-      return(list_return)
+      
+      # Calculate the marginal effects for each variable
+      val           <- matrix(NA, nrow = n_obs, ncol = n_me)
+      colnames(val) <- me
+      for (i in 1:n_me)
+      {
+        val[, i] <- predict(object, ..., 
+                            newdata   = newdata,
+                            given_ind = given_ind, 
+                            group     = group,
+                            group2    = group2,
+                            group3    = group3,
+                            type      = type, 
+                            me        = me[i], 
+                            eps       = eps,
+                            control   = control,
+                            factors   = factors0[[i]])
+      }
+      return(val)
+    }
+    
+    # Deal with factors
+    if (!is.null(factors))
+    {
+      if (is.list(factors))
+      {
+        factors <- factors[[1]]
+      }
+      eps <- c(0, 1)
+      if (!(me %in% factors))
+      {
+        stop (paste0("Variable ", me, 
+                     " is not a category of the factor variable: ",
+                     paste0(factors, collapse = ", ")))
+      }
+      for (i in factors)
+      {
+        newdata[i] <- 0
+      }
     }
     
     # Determine the type of the marginal effect
     is_discrete <- length(eps) > 1
     
-    # Adjust epsilon if need
+    # Adjust epsilon if needed
     if (is.null(eps))
     {
       eps <- newdata[[me]] * sqrt(.Machine$double.eps)
@@ -593,6 +589,64 @@ predict.msel <- function(object, ...,
     
     # Return marginal effect
     return(val)
+  }
+  
+  # -------------------------------------------------------
+  # Conditional probabilities
+  # -------------------------------------------------------
+  
+  # Calculate the conditional probabilities
+  if (length(given_ind) > 0)
+  {
+    if (length(given_ind) >= n_eq_g)
+    {
+      stop(paste("At least one component should be unconditioned.",
+                 "Please, ensure that 'length(given_ind)' is smaller than",
+                 "the number of observable equations."))
+    }
+    
+    if (type != "prob")
+    {
+      warning(paste0("Since 'given_ind' has been provided then 'type'",
+                     "will be coerced to 'prob'."))
+    }
+    
+    group_given             <- group
+    group_given[-given_ind] <- -1
+    
+    # Probability of the intersection
+    p_intersection <- predict(object, 
+                              newdata = newdata, 
+                              type    = "prob",
+                              group   = group,
+                              group3  = group3,
+                              control = control)
+    
+    # Probability of the condition
+    p_given <- predict(object, 
+                       newdata = newdata, 
+                       type    = "prob",
+                       group   = group_given,
+                       group3  = group3,
+                       control = control)
+    
+    # Conditional probability
+    p_cond <- p_intersection / p_given
+    
+    # Provide the name for the conditional probability
+    is_eq_ng            <- is_eq
+    is_eq_ng[given_ind] <- FALSE
+    colnames(p_cond)[1] <- paste0("P(",
+                                  paste0(object$other$z_names[is_eq_ng], "=",
+                                         group[is_eq_ng], collapse = ", "),
+                                  "|",
+                                  paste0(object$other$z_names[given_ind], "=",
+                                         group[given_ind], collapse = ", "),
+                                  ")")
+    rownames(p_cond)   <- 1:length(p_cond)
+    
+    # Return the results
+    return(p_cond)
   }
 
   # -------------------------------------------------------
@@ -809,7 +863,7 @@ predict.msel <- function(object, ...,
                       ((type == "val") & (estimator == "ml"))))
     {
       # Prepare the matrix to store the final results
-      lambda_mat <- matrix(0, nrow = n_obs, ncol = n_eq)
+      lambda_mat           <- matrix(0, nrow = n_obs, ncol = n_eq)
       colnames(lambda_mat) <- paste0("lambda", 1:n_eq)
       if (n_eq_g > 0)
       {
@@ -830,12 +884,12 @@ predict.msel <- function(object, ...,
         if (!is_marginal)
         {
           lambda_lower <- -grads$grad_lower
-          lambda_upper <- grads$grad_upper
+          lambda_upper <-  grads$grad_upper
         }
         else
         {
           lambda_lower <- -grads$grad_lower_marginal
-          lambda_upper <- grads$grad_upper_marginal
+          lambda_upper <-  grads$grad_upper_marginal
         }
         if (hasName(control, name = "adj"))
         {

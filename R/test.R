@@ -1,4 +1,4 @@
-# Differentiate function respect to the parameters
+# Differentiate function with respect to the parameters
 # estimated via msel function
 deriv_msel <- function(object, 
                        fn, 
@@ -6,8 +6,70 @@ deriv_msel <- function(object,
                        eps     = max(1e-4, sqrt(.Machine$double.eps) * 10),
                        type    = "default",
                        n_sim   = 10000,
-                       n_cores = 1)
+                       n_cores = 1,
+                       is.gc   = FALSE)
 {
+  # Deal with several objects
+  if (!is(object = object, class2 = "msel"))
+  {
+    # Get the number of objects
+    n_objects <- length(object)
+    
+    # Setup the arguments of the function
+    fn_args$object <- object
+    
+    # List to store the outputs of single calls
+    d <- vector(mode = "list", length = n_objects)
+    
+    # Prepare the output
+    out <- list(grad = NULL, val = NULL)
+    
+    # Create a new function
+    fn_i <- function(object, fn_args = fn_args, i = 1)
+    {
+      # Call the initial function
+      fn_args$object[[i]] <- object
+      val                 <- do.call(what = fn, args = fn_args)
+
+      # Return the results
+      return (val)
+    }
+    
+    # Apply the functions
+    for (i in 1:n_objects)
+    {
+      # Check the class of the object
+      if (!is(object = object[[i]], class2 = "msel"))
+      {
+        stop(paste0("Argument object[[", i, "]] is not of class 'msel'."))
+      }
+      
+      # Get eps
+      eps_i <- eps
+      if (is.list(eps))
+      {
+        eps_i <- eps[[i]]
+      }
+      
+      # Recursive call with a new function
+      d[[i]] <- deriv_msel(object  = object[[i]], 
+                           fn      = fn_i,
+                           fn_args = list(fn_args = fn_args, i = i), 
+                           eps     = eps_i,
+                           type    = type,
+                           n_sim   = n_sim,
+                           n_cores = n_cores,
+                           is.gc   = is.gc)
+      
+      # Combine the results
+      out$grad <- cbind(out$grad, d[[i]]$grad)
+    }
+    out$val <- d[[1]]$val    
+    
+    # Return the results
+    return (out)
+  }
+  
   # Set some properties of the object
   object$n_sim   <- n_sim
   object$n_cores <- n_cores
@@ -22,6 +84,7 @@ deriv_msel <- function(object,
   is3        <- object$other$is3
   type3      <- object$type3
   sigma_omit <- object$other$sigma_omit
+  cov2_omit  <- object$other$cov2_omit
   
   # Deal with eps
   if (length(eps) == 1)
@@ -76,6 +139,10 @@ deriv_msel <- function(object,
           fn_args$object$coef[[i]][j]     <- par_old_tmp
         }
       }
+      if (is.gc)
+      {
+        gc()
+      }
     }
   }
   
@@ -107,6 +174,10 @@ deriv_msel <- function(object,
           # set initial value
           fn_args$object$cuts[[i]][j] <- par_old_tmp
         }
+      }
+      if (is.gc)
+      {
+        gc()
       }
     }
   }
@@ -142,6 +213,10 @@ deriv_msel <- function(object,
             fn_args$object$coef_var[[i]][j] <- par_old_tmp
           }
         }
+      }
+      if (is.gc)
+      {
+        gc()
       }
     }
   }
@@ -182,6 +257,10 @@ deriv_msel <- function(object,
           fn_args$object$sigma[j, i] <- par_old_tmp
         }
       }
+      if (is.gc)
+      {
+        gc()
+      }
     }
   }
   
@@ -215,6 +294,10 @@ deriv_msel <- function(object,
             fn_args$object$marginal_par[[i]][j] <- par_old_tmp
           }
         }
+      }
+      if (is.gc)
+      {
+        gc()
       }
     }
   }
@@ -257,6 +340,10 @@ deriv_msel <- function(object,
           }
         }
       }
+      if (is.gc)
+      {
+        gc()
+      }
     }
     
     # Differentiate respect to the variances of the continuous equations
@@ -289,6 +376,10 @@ deriv_msel <- function(object,
             fn_args$object$var2[[i]][j] <- par_old_tmp
           }
         }
+        if (is.gc)
+        {
+          gc()
+        }
       }
     }
     
@@ -303,30 +394,37 @@ deriv_msel <- function(object,
         {
           for (t in 1:n_eq)
           {
-            if (eps[cov2_ind[[i]][j, t]] != 0)
+            if (cov2_omit[[i]][j, t] == 0)
             {
-              # save initial value
-              par_old_tmp <- object$cov2[[i]][j, t] 
-              # prepare increment
-              eps_tmp <- eps[cov2_ind[[i]][j, t]] * abs(par_old_tmp)
-              # plus
-              fn_args$object$cov2[[i]][j, t] <- par_old_tmp + eps_tmp
-              fn_plus <- do.call(what = fn, args = fn_args)
-              # minus
-              fn_args$object$cov2[[i]][j, t] <- par_old_tmp - eps_tmp
-              fn_minus <- do.call(what = fn, args = fn_args)
-              # derivative
-              out[, cov2_ind[[i]][j, t]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
-              # names
-              colnames(out)[cov2_ind[[i]][j, t]] <- paste0("cov(", 
-                                                            object$other$y_names[i],
-                                                            "(", j, ")", ",", 
-                                                            object$other$z_names[t],
-                                                            ")")
-              # set initial value
-              fn_args$object$cov2[[i]][j, t] <- par_old_tmp
+              if (eps[cov2_ind[[i]][j, t]] != 0)
+              {
+                # save initial value
+                par_old_tmp <- object$cov2[[i]][j, t] 
+                # prepare increment
+                eps_tmp <- eps[cov2_ind[[i]][j, t]] * abs(par_old_tmp)
+                # plus
+                fn_args$object$cov2[[i]][j, t] <- par_old_tmp + eps_tmp
+                fn_plus <- do.call(what = fn, args = fn_args)
+                # minus
+                fn_args$object$cov2[[i]][j, t] <- par_old_tmp - eps_tmp
+                fn_minus <- do.call(what = fn, args = fn_args)
+                # derivative
+                out[, cov2_ind[[i]][j, t]] <- (fn_plus - fn_minus) / (2 * eps_tmp)
+                # names
+                colnames(out)[cov2_ind[[i]][j, t]] <- paste0("cov(", 
+                                                             object$other$y_names[i],
+                                                             "(", j, ")", ",", 
+                                                             object$other$z_names[t],
+                                                             ")")
+                # set initial value
+                fn_args$object$cov2[[i]][j, t] <- par_old_tmp
+              }
             }
           }
+        }
+        if (is.gc)
+        {
+          gc()
         }
       }
     }
@@ -377,6 +475,10 @@ deriv_msel <- function(object,
             counter <- counter + 1
           }
         }
+        if (is.gc)
+        {
+          gc()
+        }
       }
     }
   }
@@ -411,6 +513,10 @@ deriv_msel <- function(object,
           # set initial value
           fn_args$object$coef3[i, j]     <- par_old_tmp
         }
+      }
+      if (is.gc)
+      {
+        gc()
       }
     }
   }
@@ -457,6 +563,10 @@ deriv_msel <- function(object,
           counter <- counter + 1
         }
       }
+      if (is.gc)
+      {
+        gc()
+      }
     }
   }
   
@@ -490,20 +600,31 @@ test_msel <- function(object,
                       cl        = 0.95,
                       se_type   = "dm",
                       trim      = 0,
-                      vcov      = object$cov,
+                      vcov      = NULL,
                       iter      = 100,
                       generator = rnorm,
                       bootstrap = NULL,
-                      par_ind   = 1:object$control_lnL$n_par,
+                      par_ind   = NULL,
                       eps       = max(1e-4, sqrt(.Machine$double.eps) * 10),
                       n_sim     = 1000,
                       n_cores   = 1)
 {
   # -------------------------------------------------------
+  # Several models
+  # -------------------------------------------------------
+  
+  # Get the number of models
+  n_objects <- 1
+  if (!is(object = object, class2 = "msel"))
+  {
+    n_objects <- length(object)
+  }
+  
+  # -------------------------------------------------------
   # Likelihood ratio test
   # -------------------------------------------------------
   
-  if (length(object) == 2)
+  if ((length(object) == 2) & (test %in% c("lr", "lrtest", "lr-test")))
   {
     out <- lrtest_msel(model1 = object[[1]], model2 = object[[2]])
     return(out)
@@ -517,7 +638,27 @@ test_msel <- function(object,
   out <- list()
   
   # Get the number of parameters of the model
-  n_par <- object$control_lnL$n_par
+  n_par       <- NULL
+  object_list <- NULL
+  if (n_objects == 1)
+  {
+    n_par <- object$other$n_par
+    if (is.null(vcov))
+    {
+      vcov <- object$cov
+    }
+  }
+  else
+  {
+    # Calculate asymptotic covariance matrix of the parameters
+    # of the models
+    object_list <- vcov_combine(object, type = "all")
+    n_par       <- object_list$n_par
+    if (is.null(vcov))
+    {
+      vcov <- object_list$cov
+    }
+  }
   
   # Values for the output
   val     <- NULL
@@ -528,8 +669,19 @@ test_msel <- function(object,
   upr     <- NULL
   
   # Provide the parameters
-  object$n_sim   <- n_sim
-  object$n_cores <- n_cores
+  if (n_objects == 1)
+  {
+    object$n_sim   <- n_sim
+    object$n_cores <- n_cores
+  }
+  else
+  {
+    for (i in 1:n_objects)
+    {
+      object[[i]]$n_sim   <- n_sim
+      object[[i]]$n_cores <- n_cores
+    }
+  }
   fn_args$object <- object
   
   # -------------------------------------------------------
@@ -553,7 +705,7 @@ test_msel <- function(object,
   if (!(test %in% test_vec))
   {
     stop(paste0("Argument 'test' is wrong. ",
-                "Please, insure that it is one of: ",
+                "Please, ensure that it is one of: ",
                 paste0(test_vec, collapse = ", "),
                 ".\n"))
   }
@@ -566,13 +718,12 @@ test_msel <- function(object,
     method <- "classic"
     warning("It is assumed that 'method' is 'classic'.")
   }
-  if (method %in% c("boot", "nonparametric", "non-parametric",
-                    "percentile"))
+  if (method %in% c("boot", "nonparametric", "non-parametric", "percentile"))
   {
     method <- "bootstrap"
     warning("It is assumed that 'method' is 'bootstrap'.")
   }
-  if (method %in% c("score bootstrap", "bootstrap score"))
+  if (method %in% c("score bootstrap", "bootstrap score", "score-bootstrap"))
   {
     method <- "score"
     warning("It is assumed that 'method' is 'score'.")
@@ -580,7 +731,7 @@ test_msel <- function(object,
   if (!(method %in% method_vec))
   {
     stop(paste0("Argument 'method' is wrong. ",
-                "Please, insure that it is one of: ",
+                "Please, ensure that it is one of: ",
                 paste0(method_vec, collapse = ", "),
                 ".\n"))
   }
@@ -607,7 +758,7 @@ test_msel <- function(object,
   if (!(ci %in% ci_vec))
   {
     stop(paste0("Argument 'ci' is wrong. ",
-                "Please, insure that it is one of: ",
+                "Please, ensure that it is one of: ",
                 paste0(ci_vec, collapse = ", "),
                 ".\n"))
   }
@@ -637,12 +788,12 @@ test_msel <- function(object,
   }
   if ((se_type == "bootstrap") & is.null(bootstrap))
   {
-    stop("Invalide 'se_type' since 'bootstrap' is 'NULL'.")
+    stop("Invalid 'se_type' since 'bootstrap' is 'NULL'.")
   }
   if (!(se_type %in% se_type_vec))
   {
     stop(paste0("Argument 'se_type' is wrong. ",
-                "Please, insure that it is one of: ",
+                "Please, ensure that it is one of: ",
                 paste0(se_type_vec, collapse = ", "),
                 ".\n"))
   }
@@ -654,10 +805,13 @@ test_msel <- function(object,
   }
   
   # Validate vcov
-  if (!is.matrix(vcov) | any(dim(vcov) != dim(object$cov)))
+  if (n_objects == 1)
   {
-    stop(paste0("Invalid 'vcov' value. ",
-                "It should be a square matrix of appropriate size."))
+    if (!is.matrix(vcov) | any(dim(vcov) != dim(object$cov)))
+    {
+      stop(paste0("Invalid 'vcov' value. ",
+                  "It should be a square matrix of appropriate size."))
+    }
   }
   
   # Validate iter
@@ -681,42 +835,102 @@ test_msel <- function(object,
   }
   
   # Validate par_ind
-  par_ind_unique <- unique(par_ind)
-  if (length(par_ind) != length(par_ind_unique))
+  if (n_objects == 1)
   {
-    warning("Duplicates of some indexes have been removed from 'par_ind'.")
-    par_ind <- par_ind_unique
+    if (is.null(par_ind))
+    {
+      par_ind <- 1:object$other$n_par
+    }
+    else
+    {
+      par_ind_unique <- unique(par_ind)
+      if (length(par_ind) != length(par_ind_unique))
+      {
+        warning("Duplicates of some indexes have been removed from 'par_ind'.")
+        par_ind <- par_ind_unique
+      }
+      out_of_range <- (par_ind < 1) | (par_ind > n_par)
+      if (any(out_of_range))
+      {
+        warning(paste0("Indexes ", paste(par_ind[out_of_range], collapse = ", "), 
+                       " are out of range so they have been removed",
+                       " from 'par_ind'."))
+        par_ind <- par_ind[!out_of_range]
+      }
+      if (length(par_ind) == 0)
+      {
+        stop("Input argument 'par_ind' should not be empty.")
+      }
+    }
   }
-  out_of_range <- (par_ind < 1) | (par_ind > n_par)
-  if (any(out_of_range))
+  else
   {
-    warning(paste0("Indexes ", paste(par_ind[out_of_range], collapse = ", "), 
-                   " are out of range so they have been removed",
-                   " from 'par_ind'."))
-    par_ind <- par_ind[!out_of_range]
-  }
-  if (length(par_ind) == 0)
-  {
-    stop("Input argument 'par_ind' should not be empty.")
+    if (is.list(par_ind) & (length(par_ind) == n_objects))
+    {
+      # User have provided par_ind
+      for (i in 1:n_objects)
+      {
+        par_ind[[i]] <- unique(par_ind[[i]])
+      }
+    }
+    else
+    {
+      # User have not provided par_ind
+      par_ind <- vector(mode = "list", length = n_objects)
+      for (i in 1:n_objects)
+      {
+        par_ind[[i]] <- 1:object[[i]]$other$n_par
+      }
+    }
   }
   
   # Validate eps
-  if (length(eps) == 1)
+  if (n_objects == 1)
   {
-    eps <- rep(eps, length(par_ind))
+    if (length(eps) == 1)
+    {
+      eps <- rep(eps, length(par_ind))
+    }
+    if (length(eps) != length(par_ind))
+    {
+      stop(paste0("If 'eps' has more than 1 element then ",
+                  "length of 'eps' and 'par_ind' should be the same. "))
+    }
+    eps_tmp          <- rep(0, n_par)
+    eps_tmp[par_ind] <- eps
+    eps              <- eps_tmp
+    eps[is.na(eps)]  <- 0
   }
-  if (length(eps) != length(par_ind))
+  else
   {
-    stop(paste0("If 'eps' has more than 1 element then ",
-                "length of 'eps' and 'par_ind' should be the same. "))
+    if (length(eps) == 1)
+    {
+      eps_list <- vector(mode = "list", length = n_objects)
+      for (i in 1:n_objects)
+      {
+        eps_list[[i]] <- rep(eps, object[[i]]$other$n_par)
+      }
+      eps <- eps_list
+    }
+    if (length(eps) != n_objects)
+    {
+      stop (paste0("Incorrect length of 'eps' argument. It should be a list", 
+                   " of ", n_objects, " elements."))
+    }
+    for (i in 1:n_objects)
+    {
+      if (length(eps[[i]]) != object[[i]]$other$n_par)
+      {
+        stop (paste0("Incorrect length of 'eps[['", i, "]]' argument. ",
+                     "It should be a numeric vector", " of ", 
+                     object[[i]]$other$n_par, " elements."))
+      }
+      eps[[i]][-par_ind[[i]]] <- 0
+    }
   }
-  eps_tmp          <- rep(0, n_par)
-  eps_tmp[par_ind] <- eps
-  eps              <- eps_tmp
-  eps[is.na(eps)]  <- 0
   
   # Validate object
-  if (!is(object = object, class2 = "msel"))
+  if (!is(object = object, class2 = "msel") & (n_objects == 1))
   {
     stop("Invalid 'object' argument. It should be an object of class 'msel'.")
   }
@@ -725,15 +939,17 @@ test_msel <- function(object,
   is_bootstrap     <- !is.null(bootstrap)
   if (is_bootstrap)
   {
-    if (!is(object = bootstrap, class2 = "bootstrap_msel"))
+    if (!is(object = bootstrap, class2 = "bootstrap_msel") & 
+        !is(object = bootstrap, class2 = "crossmodel_bootstrap_msel"))
     {
       stop(paste0("Invalid 'bootstrap' argument. ",
-                  "It should be an object of class 'bootstrap_msel'."))
+                  "It should be an object of class 'bootstrap_msel' or ",
+                  "'crossmodel_bootstrap_msel'."))
     }
   }
   if (((method == "bootstrap")         | 
        (ci %in% c("percentile", "bc")) | 
-       (se_type == "bootstrap"))        &
+       (se_type == "bootstrap"))       &
       !is_bootstrap)
   {
     stop("Argument 'bootstrap' should be provided.")
@@ -781,11 +997,29 @@ test_msel <- function(object,
   n_bootstrap   <- NULL   # the number of bootstrap iterations
   if (!is.null(bootstrap))
   {
-    n_bootstrap   <- bootstrap$iter
+    if (n_objects == 1)
+    {
+      n_bootstrap <- bootstrap$iter
+    }
+    else
+    {
+      n_bootstrap <- bootstrap[[1]]$iter
+    }
     val_bootstrap <- matrix(NA, nrow = n_bootstrap, ncol = n_val)
     for (i in 1:n_bootstrap)
     {
-      fn_args$object     <- update_msel(object, par = bootstrap$par[i, ])
+      if (n_objects == 1)
+      {
+        fn_args$object <- update_msel(object, par = bootstrap$par[i, ])
+      }
+      else
+      {
+        for (j in 1:n_objects)
+        {
+          fn_args$object[[j]] <- update_msel(object[[j]], 
+                                             par = bootstrap[[j]]$par[i, ])
+        }
+      }
       val_bootstrap[i, ] <- do.call(what = fn, args = fn_args)
     }
     fn_args$object <- object
@@ -808,24 +1042,24 @@ test_msel <- function(object,
   # Estimate standard error via the bootstrap
   if (se_type == "bootstrap")
   {
-    # Apply the trimming if need
-    val_bootsrap_adj <- val_bootstrap
+    # Apply the trimming if needed
+    val_bootstrap_adj <- val_bootstrap
     if(trim != 0)
     {
-      trimmed                    <- rep(FALSE, n_bootstrap)
-      val_bootstrap_adj          <- sweep(x      = val_bootstrap,           
-                                          MARGIN = 2, 
-                                          STATS  = colMeans(val_bootstrap), 
-                                          FUN    = "-")
-      trimmed_val                 <- rowSums(val_bootstrap_adj ^ 2)
-      trimmed_crit                <- quantile(trimmed_val, probs = 1 - trim, 
-                                              type = 1)
-      trimmed                     <- trimmed_val > trimmed_crit
-      val_bootsrap_adj[trimmed, ] <- 0 
+      trimmed                     <- rep(FALSE, n_bootstrap)
+      val_bootstrap_adj           <- sweep(x      = val_bootstrap,           
+                                           MARGIN = 2, 
+                                           STATS  = colMeans(val_bootstrap), 
+                                           FUN    = "-")
+      trimmed_val                  <- rowSums(val_bootstrap_adj ^ 2)
+      trimmed_crit                 <- quantile(trimmed_val, probs = 1 - trim, 
+                                               type = 1)
+      trimmed                      <- trimmed_val > trimmed_crit
+      val_bootstrap_adj[trimmed, ] <- 0 
     }
     
     # Calculate the standard errors
-    fn_cov <- cov(val_bootsrap_adj)
+    fn_cov <- cov(val_bootstrap_adj)
     se     <- sqrt(diag(fn_cov))
   }
   
@@ -870,9 +1104,8 @@ test_msel <- function(object,
     stat    <- NA
     
     # Estimate test statistics
-    val         <- matrix(val, ncol = 1)
-    fn_cov_inv  <- qr.solve(fn_cov, tol = 1e-16)
-    stat        <- as.numeric(t(val) %*% fn_cov_inv %*% val)
+    val  <- matrix(val, ncol = 1)
+    stat <- crossprod(qr.solve(fn_cov, val, tol = 1e-16), val)
     
     # Calculate p-values
     if (method == "classic")
@@ -885,9 +1118,8 @@ test_msel <- function(object,
       for (i in 1:n_bootstrap)
       {
         val_diff          <- matrix(val_bootstrap[i, ] - val, ncol = 1)
-        stat_bootstrap[i] <- as.numeric(t(val_diff) %*% 
-                                        fn_cov_inv  %*% 
-                                        val_diff)
+        stat_bootstrap[i] <- crossprod(solve(fn_cov, val_diff, tol = 1e-16), 
+                                       val_diff)
       }
       p_value <- mean(stat_bootstrap > stat)
     }
@@ -900,36 +1132,66 @@ test_msel <- function(object,
   # Conduct score bootstrap Wald test
   if ((test == "wald") & (method == "score"))
   {
-    # Calculate Jacobian and Hessian if need
-    if (!hasName(object, name = "J") | !hasName(object, name = "H"))
+    # Calculate Jacobian and Hessian if needed
+    if ((!hasName(object, name = "J") | !hasName(object, name = "H")) & 
+        (n_objects == 1))
     {
       vcov_ml_list  <- vcov_ml(object, type = "sandwich", 
                                n_cores = 1, n_sim = 1000)
       object$J      <- vcov_ml_list$J
       object$H      <- vcov_ml_list$H
+      if (object$other$is_cluster)
+      {
+        object$J_cluster <- vcov_ml_list$J_cluster
+      }
     }
-    # initial statistic
-    scores <- object$J
+    
+    # Prepare main variables
+    scores <- NULL
     H      <- object$H
-    n_obs  <- nrow(scores)
-    val    <- matrix(val, ncol = 1) / sqrt(n_obs)
-    H_inv  <- qr.solve(H, tol = 1e-16)
-    A      <- d %*% H_inv
-    stat   <- t(val) %*% 
-              qr.solve(A %*% cov(scores) %*% t(A), tol = 1e-16) %*% 
-              val
-    stat    <- as.numeric(stat)
-    # bootstrapped statistics 
+    if (n_objects == 1)
+    {
+      if (object$other$is_cluster)
+      {
+        scores <- object$J_cluster
+      }
+      else
+      {
+        scores <- object$J
+      }
+    }
+    else
+    {
+      scores <- object_list$J
+      H      <- object_list$H
+    }
+    n_obs <- nrow(scores)
+    
+    # Estimate initial statistic
+    val    < - matrix(val, ncol = 1)
+    A      <- qr.solve(H, t(scores), tol = 1e-16)
+    A_adj  <- d %*% A
+    A_svd  <- svd(A_adj)
+    A_keep <- A_svd$d > (1e-16 * max(A_svd$d))
+    stat   <- sum((t(A_svd$u[, A_keep]) %*% val) ^ 2 / A_svd$d[A_keep] ^ 2)
+    
+    # Get bootstrapped statistics
     stat_bootstrap <- rep(NA, iter)
+    A_boot         <- qr.solve(H, t(d), tol = 1e-16)
     for (i in 1:iter)
     {
-      weights            <- generator(n = nrow(scores))
-      scores_adj         <- weights * scores
-      S                  <- A %*% colSums(scores_adj) / sqrt(n_obs)
-      stat_bootstrap[i]  <- t(S) %*% qr.solve(A %*% cov(scores_adj) %*% t(A), 
-                                              tol = 1e-16) %*% S
+      weights           <- generator(n = nrow(scores))
+      scores_adj        <- weights * scores
+      B                 <- scores_adj %*% A_boot
+      S                 <- colSums(B) 
+      svd_B             <- svd(B)
+      keep_B            <- svd_B$d > (1e-16 * max(svd_B$d))
+      stat_bootstrap[i] <- sum((t(svd_B$v[, keep_B]) %*% S) ^ 2 / 
+                               svd_B$d[keep_B] ^ 2)
     }
-    p_value <- mean(stat_bootstrap >= stat)
+    
+    # Calculate the p-value
+    p_value <- mean(stat_bootstrap > stat)
   }
   
   # -------------------------------------------------------
@@ -995,7 +1257,6 @@ test_msel <- function(object,
   {
     out$tbl <- data.frame(row.names = 1:n_val)
   }
-  out$tbl$stat <- stat
 
   if (test == "t")
   {
@@ -1004,12 +1265,13 @@ test_msel <- function(object,
     rownames(out$tbl) <- 1:n_val
   }
 
-  out$test    <- test
-  out$method  <- method
-  out$se_type <- se_type
-  out$ci      <- ci
-  out$cl      <- cl
-  out$n_val   <- n_val
+  out$tbl$stat <- stat
+  out$test     <- test
+  out$method   <- method
+  out$se_type  <- se_type
+  out$ci       <- ci
+  out$cl       <- cl
+  out$n_val    <- n_val
   if (is_ci)
   {
     out$tbl$lwr <- lwr
@@ -1120,8 +1382,8 @@ print.summary.test_msel <- function(x, ..., is_legend = TRUE)
     if (x$test == "wald")
     {
       cat(paste0("p-values are calculated under the assumption that \n",
-                 "asymptotic distribution of the test statistic is \n",
-                 "chi-squared with ", x$n_val, " degrees of freedom.\n"))
+                 "the asymptotic distribution of the test statistic \n",
+                 "is chi-squared with ", x$n_val, " degrees of freedom.\n"))
     }
   }
   if (x$method == "bootstrap")

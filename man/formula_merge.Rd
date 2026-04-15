@@ -29,7 +29,7 @@ into a single formula.
 }
 \details{
 Merged formulas should have a single element on the left hand
-side and voluntary number of elements on the right hand side.
+side and arbitrary number of elements on the right hand side.
 }
 \examples{
 # Consider three formulas

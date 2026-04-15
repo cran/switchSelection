@@ -1,6 +1,6 @@
 useDynLib(switchSelection, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
-import(hpa, mnorm, gena, methods)
+import(hpa, mnorm, gena, dplyr, methods)
 
 importFrom("stats", "AIC", "as.formula", "binomial", "coef",
            "complete.cases", "cov", "glm", "lm", "lm.influence",
@@ -10,6 +10,7 @@ importFrom("stats", "AIC", "as.formula", "binomial", "coef",
            "printCoefmat", "rnorm", "quantile", "sd")
 importFrom("utils", "hasName", "methods")
 importFrom("methods", "is")
+importFrom("dplyr", "full_join")
 
 export("msel")
 
@@ -47,3 +48,5 @@ S3method("summary", "lrtest_msel")
 S3method("print", "summary.lrtest_msel")
 
 S3method("print", "struct_msel")
+
+export("vcov.msel")

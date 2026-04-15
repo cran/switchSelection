@@ -3,7 +3,7 @@
 #' of the \code{\link[switchSelection]{msel}} function.
 #' @param object object of class "msel"
 #' @param ... further arguments (currently ignored)
-#' @details Unobservable values of continuous equations are included into
+#' @details Unobservable values of continuous equations are included in
 #' the number of observations.
 #' @return A single positive integer number.
 nobs.msel <- function(object, ...)
@@ -23,8 +23,8 @@ nobs.msel <- function(object, ...)
 #' @param ... further arguments (currently ignored)
 #' @details If \code{estimator == "2step"} in 
 #' \code{\link[switchSelection]{msel}} then function may return
-#' \code{NA} value since two-step estimator of covariance matrix may be
-#' not positively defined.
+#' \code{NA} value since the two-step estimator of the covariance matrix may not
+#' be positively defined.
 #' @return Returns an object of class 'logLik'.
 logLik.msel <- function (object, ...)
 {

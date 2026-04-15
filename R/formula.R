@@ -41,7 +41,7 @@ formula.msel <- function(x, ..., type = "formula", eq = NULL)
     {
       if ((eq <= 0) | (eq > x$control_lnL$n_eq))
       {
-        stop("incorrect 'eq' value.")
+        stop("Incorrect 'eq' value.")
       }
     }
   }
@@ -122,7 +122,7 @@ formula.msel <- function(x, ..., type = "formula", eq = NULL)
 #' when \code{type = "terms"} but there will be left hand side element
 #' of the first formula on the left hand side of the merged formula.
 #' @details Merged formulas should have a single element on the left hand
-#' side and voluntary number of elements on the right hand side.
+#' side and arbitrary number of elements on the right hand side.
 #' @return This function returns a formula which form depends on 
 #' \code{type} input argument value. See 'Details' for additional information.
 #' @examples 

@@ -38,7 +38,8 @@ msel <- function(formula        = NA,
                  n_cores        = 1,
                  control        = list(),
                  regularization = list(),
-                 type3          = "logit")
+                 type3          = "logit",
+                 cluster        = NA)
 {
   # List to store the output
   out        <- list()
@@ -91,7 +92,7 @@ msel <- function(formula        = NA,
   if (!is.data.frame(data))
   {
     stop(paste0("Argument 'data' is missing or wrong. ",
-                "Please, insure that 'data' is a dataframe ",
+                "Please, ensure that 'data' is a dataframe ",
                 "containing variables described in 'formula', 'formula2', ",
                 "and 'formula3'.\n"))
   }
@@ -114,7 +115,7 @@ msel <- function(formula        = NA,
   if (!(estimator %in% c("2step", "ml")))
   {
     stop(paste0("Wrong 'estimator' argument. ",
-                "Please, insure that it is either '2step' or 'ml'.\n"))
+                "Please, ensure that it is either '2step' or 'ml'.\n"))
   }
   out$estimator <- estimator
   
@@ -220,8 +221,8 @@ msel <- function(formula        = NA,
     if (ncol(groups) != length(formula))
     {
       stop(paste0("Argument 'groups' is wrong. ",
-                  "Please, insure that 'groups' is a matrix ",
-                  "which number of columns equals to the length ",
+                  "Please, ensure that 'groups' is a matrix ",
+                  "whose number of columns equals the length ",
                   "of 'formula'.",
                   "\n"))
     }
@@ -248,8 +249,8 @@ msel <- function(formula        = NA,
     if (ncol(groups2) != length(formula2))
     {
       stop(paste0("Argument 'groups2' is wrong. ",
-                  "Please, insure that 'groups' is a matrix ",
-                  "which number of columns equals to the length ",
+                  "Please, ensure that 'groups2' is a matrix ",
+                  "whose number of columns equals the length ",
                   "of 'formula2'.",
                   "\n"))
     }
@@ -260,7 +261,7 @@ msel <- function(formula        = NA,
   if (!(opt_type %in% opt_type_vec))
   {
     stop(paste0("Argument 'opt_type' is wrong. ",
-                "Please, insure that it is one of: ",
+                "Please, ensure that it is one of: ",
                 paste0(opt_type_vec, collapse = ", "),
                 ".\n"))
   }
@@ -281,7 +282,7 @@ msel <- function(formula        = NA,
     if (!(cov_type %in% cov_type_vec))
     {
       stop(paste0("Argument 'cov_type' is wrong. ",
-                  "Please, insure that it is one of: ",
+                  "Please, ensure that it is one of: ",
                   paste0(cov_type_vec, collapse = ", "),
                   ".\n"))
     }
@@ -318,7 +319,7 @@ msel <- function(formula        = NA,
     {
       stop(paste0("The number of elements in 'marginal' should be the same ",
                   "as the number of ordered equations. ",
-                  "Please, insure that 'length(marginal) == length(formula)' ",
+                  "Please, ensure that 'length(marginal) == length(formula)' ",
                   "or 'marginal' is an empty character vector."))
     }
   }
@@ -338,31 +339,31 @@ msel <- function(formula        = NA,
     {
       if (length(degrees) != n_eq)
       {
-        stop(paste0("Invalid 'degrees' argument. Please, insure that ", 
-                    "if 'degrees' is a vector then its length equals to ",
+        stop(paste0("Invalid 'degrees' argument. Please, ensure that ", 
+                    "if 'degrees' is a vector then its length equals ",
                     "the number of selection equations."))
       }
       degrees <- matrix(rep(degrees, n_eq2), nrow = n_eq2, byrow = TRUE)
     }
     if (!is.matrix(degrees))
     {
-      stop(paste0("Invalid 'degrees' argument. Please, insure that ", 
+      stop(paste0("Invalid 'degrees' argument. Please, ensure that ", 
                   "it is a matrix."))
     }
     if (nrow(degrees) > n_eq2)
     {
       stop(paste0("Invalid 'degrees' argument since it has ", nrow(degrees),
-                  " rows. Please, insure that it has ", n_eq2, "rows."))
+                  " rows. Please, ensure that it has ", n_eq2, " rows."))
     }
     if (ncol(degrees) > n_eq)
     {
       stop(paste0("Invalid 'degrees' argument since it has ", ncol(degrees),
-                  " columns. Please, insure that it has ", n_eq, "columns."))
+                  " columns. Please, ensure that it has ", n_eq, " columns."))
     }
     if (any((degrees %% 1) != 0) | any(degrees < 0))
     {
-      stop(paste0("Invalid 'degrees' argument. Please, insure that ", 
-                  "all elements of degress are non-negative integers."))
+      stop(paste0("Invalid 'degrees' argument. Please, ensure that ", 
+                  "all elements of degrees are non-negative integers."))
     }
     for (v in seq_len(n_eq2))
     {
@@ -371,9 +372,20 @@ msel <- function(formula        = NA,
       {
         degrees[v, ] <- 0
       }
+      # remove redundant selectivity terms
+      if (!is_na_group[1] & !is_na_group[2])
+      {
+        for (j in 1:n_eq)
+        {
+          if (all(groups[groups2[, v] != -1, j] == -1))
+          {
+            degrees[v, j] <- 0
+          }
+        }
+      }
     }
   }
-  out$other$degrees   <- degrees
+  out$other$degrees <- degrees
   
   # Validate type3
   type3_vec <- c("logit", "probit")
@@ -383,7 +395,7 @@ msel <- function(formula        = NA,
     warning("It is assumed that 'type3' is 'logit'.")
   }
   if (type3 %in% c("normal", "mprobit", "mnprobit", "normal", "gaussian",
-                       "norm", "multinomial probit"))
+                   "norm", "multinomial probit"))
   {
     type3 <- "probit"
     warning("It is assumed that 'type3' is 'probit'.")
@@ -391,7 +403,7 @@ msel <- function(formula        = NA,
   if (!(type3 %in% type3_vec))
   {
     stop(paste0("Wrong 'type3' argument. ",
-                "Please, insure that it is either 'logit' or 'probit'.\n"))
+                "Please, ensure that it is either 'logit' or 'probit'.\n"))
   }
   out$type3 <- type3
   
@@ -417,32 +429,32 @@ msel <- function(formula        = NA,
     {
       if (length(degrees3) != n_degrees3)
       {
-        stop(paste0("Invalid 'degrees3' argument. Please, insure that ", 
-                    "if 'degrees3' is a vector then its length equals to ",
+        stop(paste0("Invalid 'degrees3' argument. Please, ensure that ", 
+                    "if 'degrees3' is a vector then its length equals ",
                     "the number of multinomial equations."))
       }
       degrees3 <- matrix(rep(degrees3, n_eq2), nrow = n_eq2, byrow = TRUE)
     }
     if (!is.matrix(degrees3))
     {
-      stop(paste0("Invalid 'degrees3' argument. Please, insure that ", 
+      stop(paste0("Invalid 'degrees3' argument. Please, ensure that ", 
                   "it is a matrix."))
     }
     if (nrow(degrees3) > n_eq2)
     {
       stop(paste0("Invalid 'degrees3' argument since it has ", nrow(degrees3),
-                  " rows. Please, insure that it has ", n_eq2, "rows."))
+                  " rows. Please, ensure that it has ", n_eq2, " rows."))
     }
     if (ncol(degrees3) > n_degrees3)
     {
       stop(paste0("Invalid 'degrees3' argument since it has ", ncol(degrees3),
-                  " columns. Please, insure that it has ", 
-                  model1$other$n_eq3, "columns."))
+                  " columns. Please, ensure that it has ", 
+                  model1$other$n_eq3, " columns."))
     }
     if (any((degrees3 %% 1) != 0) | any(degrees3 < 0))
     {
-      stop(paste0("Invalid 'degrees3' argument. Please, insure that ", 
-                  "all elements of degress3 are non-negative integers."))
+      stop(paste0("Invalid 'degrees3' argument. Please, ensure that ", 
+                  "all elements of degrees3 are non-negative integers."))
     }
     for (v in seq_len(n_eq2))
     {
@@ -511,7 +523,7 @@ msel <- function(formula        = NA,
                      marginal  = marginal, opt_type  = opt_type,
                      opt_args  = opt_args, n_sim     = n_sim,
                      n_cores   = n_cores,  cov_type  = "mm",
-                     type3     = type3)
+                     type3     = type3,    cluster   = cluster)
       if (!is(object = model1, class2 = "msel"))
       {
         return(model1)
@@ -560,7 +572,7 @@ msel <- function(formula        = NA,
   # Get data including only the complete observations 
   data <- complete_msel(object = out, data = data)
   
-  # Need run second time because of the endogenous regressors
+  # Need to run second time because of the endogenous regressors
   data <- complete_msel(object = out, data = data)
 
   # -------------------------------------------------------
@@ -646,9 +658,9 @@ msel <- function(formula        = NA,
   # -------------------------------------------------------
   # Names of the variables
   # -------------------------------------------------------
-  
+
   names_list <- names_msel(object = out)
-  
+
   # Store to the variables
   z_names         <- names_list$z_names
   y_names         <- names_list$y_names
@@ -698,9 +710,39 @@ msel <- function(formula        = NA,
   }
   
   # -------------------------------------------------------
+  # Clusters
+  # -------------------------------------------------------
+  
+  # Apply the clustering
+  cluster_list <- cluster_msel(object = out, cluster = cluster)
+  
+  # Store to the variables
+  ind_cluster <- cluster_list$ind_cluster
+  n_cluster   <- cluster_list$n_cluster
+  is_cluster  <- cluster_list$is_cluster
+  
+  # Store to the output
+  out$cluster           <- cluster
+  out$other$ind_cluster <- ind_cluster
+  out$other$n_cluster   <- n_cluster
+  out$other$is_cluster  <- is_cluster
+  
+  # -------------------------------------------------------
   # Indexes of the parameters
   # -------------------------------------------------------
   
+  # Calculate the number of the regimes for each continuous variable
+  n_regimes <- vector(mode = "numeric", length = 0)
+  if (is2)
+  {
+    n_regimes <- vector(mode = "numeric", length = n_eq2)
+    for (i in seq_len(n_eq2))
+    {
+      n_regimes[i] <- max(groups2[, i] + 1)
+    }
+  }
+  out$other$n_regimes <- n_regimes
+
   # Get the number of coefficients (regressors) for each equation and 
   # determine their indexes in the parameters vector
   n_coef   <- vector("mode" = "numeric", length = n_eq)
@@ -823,18 +865,6 @@ msel <- function(formula        = NA,
       }
     }
   }
-  
-  # Calculate the number of the regimes for each continuous variable
-  n_regimes <- vector(mode = "numeric", length = 0)
-  if (is2)
-  {
-    n_regimes <- vector(mode = "numeric", length = n_eq2)
-    for (i in seq_len(n_eq2))
-    {
-      n_regimes[i] <- max(groups2[, i] + 1)
-    }
-  }
-  out$other$n_regimes <- n_regimes
 
   # Deal with the coefficients of the continuous equations
   n_coef2   <- vector(mode = "numeric", length = 0)
@@ -859,7 +889,28 @@ msel <- function(formula        = NA,
   regimes         <- as.matrix(t(hpa::polynomialIndex(n_regimes - 1)))
   n_regimes_total <- nrow(regimes)
   
-  # If need add the covariances related to the continuous equations
+  # Get cov2 elements which are not identified
+  # and store them into the list
+  cov2_omit      <- vector(mode = "list", length = 1)
+  cov2_omit[[1]] <- matrix(0, nrow = 1, ncol = 1)
+  if (is1 & is2 & (estimator == "ml"))
+  {
+    cov2_omit <- vector(mode = "list", length = n_eq2)
+    for (v in seq_len(n_eq2))
+    {
+      cov2_omit[[v]] <- matrix(0, ncol = n_eq, nrow = n_regimes[v])
+      for (r in seq_len(n_regimes[v]))
+      {
+        for (j in 1:n_eq)
+        {
+          cov2_omit[[v]][r, j] <- all(groups[groups2[, v] == (r - 1), j] == -1) 
+        }
+      }
+    }
+  }
+  out$other$cov2_omit <- cov2_omit
+  
+  # If needed, add the covariances related to the continuous equations
   var2_ind       <- list(as.vector(1))
   cov2_ind       <- list(matrix(1))
   sigma2_ind     <- list(as.vector(1))
@@ -872,17 +923,23 @@ msel <- function(formula        = NA,
       var2_ind[[i]] <- (n_par + 1):(n_par + n_regimes[i])
       n_par         <- n_par + n_regimes[i]
     }
-      # ordinal equations
+    # ordinal equations
     if (is1)
     {
       cov2_ind <- vector(mode = "list", length = n_eq2)
       for (i in seq_len(n_eq2))
       {
-        cov2_ind[[i]] <- matrix(ncol = n_eq, nrow = n_regimes[i])
+        cov2_ind[[i]] <- matrix(1, ncol = n_eq, nrow = n_regimes[i])
         for (j in seq_len(n_regimes[i]))
         {
-          cov2_ind[[i]][j, ] <- (n_par + 1):(n_par + n_eq)
-          n_par              <- n_par + n_eq
+          n_cov2_omit <- sum(cov2_omit[[i]][j, ])
+          if (any(cov2_omit[[i]][j, ] == 0))
+          {
+            cov2_ind[[i]][
+              j, cov2_omit[[i]][j, ] == 0] <- (n_par + 1):(n_par + n_eq - 
+                                                           n_cov2_omit)
+            n_par <- n_par + n_eq - n_cov2_omit
+          }
         }
       }
     }
@@ -1042,7 +1099,7 @@ msel <- function(formula        = NA,
   # Maximum-likelihood estimator
   # -------------------------------------------------------
 
-  # Store the information need for the maximum-likelihood 
+  # Store the information needed for the maximum-likelihood 
   # estimator into the list
   groups_tmp <- groups
   if (any(is.na(groups)))
@@ -1082,6 +1139,7 @@ msel <- function(formula        = NA,
                       sigma3_ind_mat   = sigma3_ind_mat - 1,
                       var2_ind         = lapply(var2_ind, function(x){x - 1}),
                       cov2_ind         = lapply(cov2_ind, function(x){x - 1}),
+                      cov2_omit        = cov2_omit,
                       cuts_ind         = lapply(cuts_ind, function(x){x - 1}),
                       marginal_par_ind = lapply(marginal_par_ind, 
                                                 function(x){x - 1}),
@@ -1246,8 +1304,14 @@ msel <- function(formula        = NA,
   }
 
   # Optimization
-  opt <- NULL
-  if (estimator == "ml")
+  opt    <- NULL
+  is_opt <- TRUE
+  if (hasName(control, "is_opt"))
+  {
+    is_opt <- control$is_opt
+    par    <- start
+  }
+  if ((estimator == "ml") & is_opt)
   {
     opt <- opt_switchSelection(opt_args       = opt_args, 
                                control_lnL    = control_lnL,
@@ -1259,6 +1323,7 @@ msel <- function(formula        = NA,
                                regularization = regularization)
     par <- opt$par
   }
+  gc()
 
   # -------------------------------------------------------
   # Two-step estimator
@@ -1314,7 +1379,7 @@ msel <- function(formula        = NA,
       }
       par[sigma3_ind] <- model1$par[model1$ind$sigma3]
     }
-    
+
     # List to store the least squares models
     model2_list <- vector(mode = "list", length = n_eq2)
     
@@ -1365,11 +1430,11 @@ msel <- function(formula        = NA,
   }
   out$twostep <- model2_list
   out$y_pred  <- y_pred
+  gc()
   
   # Store parameters into the variables
     # get the list of the parameters
   par_list <- par_msel(object = out, par = par)
-
     # assign them to the variables
   par             <- par_list$par
   coef            <- par_list$coef
@@ -1415,14 +1480,18 @@ msel <- function(formula        = NA,
 
   # Estimate the asymptotic covariance matrix
     # Prepare some values
-  H     <- NULL                # Hessian
-  H_inv <- NULL                # Inverse Hessian
-  J     <- NULL                # Jacobian (or scores for MM)
-  cov   <- diag(rep(1, n_par)) # Asymptotic covariance matrix
+  H     <- NULL                                   # Hessian
+  H_inv <- NULL                                   # Inverse Hessian
+  J     <- NULL                                   # Jacobian (or scores for MM)
+  cov   <- matrix(NA, nrow = n_par, ncol = n_par) # Asymptotic covariance matrix
     # Manual covariance matrix
   if (is.matrix(cov_type))
   {
     cov <- cov_type
+  }
+  else
+  {
+    cov_type <- tolower(cov_type)
   }
     # Maximum-likelihood asymptotic covariance matrix estimator
   if (!is.matrix(cov_type) & (estimator == "ml"))
@@ -1440,16 +1509,30 @@ msel <- function(formula        = NA,
       J     <- vcov_object$J
       out$J <- J
     }
+    if (hasName(vcov_object, "J"))
+    {
+      out$J_cluster <- vcov_object$J_cluster
+    }
   }
     # Two-step asymptotic covariance matrix estimator
   if (estimator == "2step" & (cov_type != "no"))
   {
-    vcov_object <- vcov_2step(object  = out,
-                              n_cores = n_cores, 
-                              n_sim   = n_sim)
+    is_cov_simple <- FALSE
+    if (hasName(control, "is_cov_simple"))
+    {
+      is_cov_simple <- control$is_cov_simple
+    }
+    vcov_object <- vcov_2step(object        = out,
+                              n_cores       = n_cores, 
+                              n_sim         = n_sim,
+                              is_cov_simple = is_cov_simple)
     cov         <- vcov_object$vcov
     out$J       <- vcov_object$scores
     out$H       <- vcov_object$scores_jac
+    if (is_cluster)
+    {
+      out$J_cluster <- vcov_object$scores_cluster
+    }
   }
   out$cov_type <- cov_type
   out$cov      <- cov
@@ -1466,7 +1549,10 @@ msel <- function(formula        = NA,
   {
     if (length(regularization) == 0)
     {
-      logLik_val <- opt$value
+      if (is_opt)
+      {
+        logLik_val <- opt$value
+      }
     }
     else
     {

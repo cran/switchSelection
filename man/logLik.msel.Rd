@@ -21,6 +21,6 @@ of the \code{\link[switchSelection]{msel}} function.
 \details{
 If \code{estimator == "2step"} in 
 \code{\link[switchSelection]{msel}} then function may return
-\code{NA} value since two-step estimator of covariance matrix may be
-not positively defined.
+\code{NA} value since the two-step estimator of the covariance matrix may not
+be positively defined.
 }

@@ -15,14 +15,14 @@ groups_msel <- function(object, data, groups, groups2, groups3)
   is_na_group <- object$other$is_na_group
   if (is.null(data))
   {
-    object <- object$data
+    data <- object$data
   }
   n_obs <- nrow(data)
   
   # The number of observations
   n_obs <- nrow(data)
   
-  # Get the dependent variables of the ordinal equations
+  # Get the dependent variable of the multinomial equation
   z <- matrix(NA)
   if (is1)
   {
@@ -209,7 +209,7 @@ groups_msel <- function(object, data, groups, groups2, groups3)
     }
     n_eq_all_g <- n_eq_g
   }
-  # continuos equations
+  # continuous equations
   if (is2)
   {
     n_eq2_g <- vector(mode = "numeric", length = n_groups)

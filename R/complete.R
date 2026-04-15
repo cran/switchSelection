@@ -15,11 +15,11 @@ complete_msel <- function(object, data = NULL)
   formula3  <- object$formula3
   if (is.null(data))
   {
-    object <- object$data
+    data <- object$data
   }
   
   # Convert the dependent variable to unobservable if
-  # there is some unobservable independent variables
+  # there are some unobservable independent variables
     # ordered equations
   if (is1)
   {

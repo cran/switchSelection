@@ -17,59 +17,119 @@ bootstrap_msel <- function(object,
                            n_sim    = 1000, 
                            n_cores  = 1)
 {
-  # The number of observations
-  n <- nrow(object$data)
-  
-  # List to store the results
-  out <- list(par = matrix(NA, nrow = iter, ncol = object$other$n_par))
-  if (is_ind)
+  # Deal with several objects
+  n_objects <- NULL
+  if (!is(object = object, class2 = "msel"))
   {
-    out$ind <- matrix(NA, nrow = n, ncol = iter)
+    # Get the number of objects
+    n_objects <- length(object)
+    
+    # Routine for several objects
+    if (n_objects > 1)
+    {
+      # Check the class of the object
+      for (i in 1:n_objects)
+      {
+        if (!is(object = object[[i]], class2 = "msel"))
+        {
+          stop(paste0("Argument object[[", i, "]] is not of class 'msel'."))
+        }
+      }
+    }
   }
-  out$iter <- iter
+  else
+  {
+    n_objects <- 1
+    object <- list(object)
+  }
+  
+  # Combine the data
+  data <- object[[1]]$data
+  if (n_objects > 1)
+  {
+    for (i in 2:n_objects)
+    {
+      data <- suppressMessages(dplyr::full_join(x = data, y = object[[i]]$data))
+    }
+  }
+  
+  # The number of observations
+  n <- nrow(data)
+  
+  # Lists to store the results
+  out <- vector(mode = "list", length = n_objects)
+  for (i in 1:n_objects)
+  {
+    # Prepare the output
+    out[[i]] <- list(par = matrix(NA, 
+                                  nrow = iter, 
+                                  ncol = object[[i]]$other$n_par))
+    if (is_ind)
+    {
+      out[[i]]$ind <- matrix(NA, nrow = n, ncol = iter)
+    }
+    
+    # Save the number of iterations
+    out[[i]]$iter <- iter
+    
+    # Assign the class
+    class(out[[i]]) <- "bootstrap_msel"
+    class(out)      <- "crossmodel_bootstrap_msel"
+  }
   
   # Main bootstrap routine
   for (i in 1:iter)
   {
     # Select the indexes of the observations to include into the sample
     ind <- sample(x = 1:n, size = n, replace = TRUE)
-    if (is_ind)
-    {
-      object$ind[, i] <- ind
-    }
-      
-    # Estimate the model
-    model <- msel(formula        = object$formula, 
-                  formula2       = object$formula2,
-                  formula3       = object$formula3,
-                  data           = object$data[ind, ], 
-                  groups         = object$groups, 
-                  groups2        = object$groups2,
-                  groups3        = object$groups3,
-                  marginal       = object$marginal,
-                  opt_type       = opt_type, 
-                  opt_args       = opt_args,
-                  start          = object$par,
-                  estimator      = object$estimator,
-                  cov_type       = "no",
-                  degrees        = object$degrees,
-                  degrees3       = object$degrees3,
-                  n_sim          = n_sim,
-                  n_cores        = n_cores,
-                  regularization = object$other$regularization,
-                  type3          = object$type3)
-      
-      # Store the results
-      out$par[i, ] <- model$par
-  }
     
-  # Assign the class
-  class(out) <- "bootstrap_msel"
+    # For each model
+    for (j in 1:n_objects)
+    {
+      # Save the indexes if needed
+      if (is_ind)
+      {
+        out[[j]]$ind[, i] <- ind
+      }
+        
+      # Estimate the model
+      model <- msel(formula        = object[[j]]$formula, 
+                    formula2       = object[[j]]$formula2,
+                    formula3       = object[[j]]$formula3,
+                    data           = data[ind, ], 
+                    groups         = object[[j]]$groups, 
+                    groups2        = object[[j]]$groups2,
+                    groups3        = object[[j]]$groups3,
+                    marginal       = object[[j]]$marginal,
+                    opt_type       = opt_type, 
+                    opt_args       = opt_args,
+                    start          = object[[j]]$par,
+                    estimator      = object[[j]]$estimator,
+                    cov_type       = "no",
+                    degrees        = object[[j]]$degrees,
+                    degrees3       = object[[j]]$degrees3,
+                    n_sim          = n_sim,
+                    n_cores        = n_cores,
+                    regularization = object[[j]]$other$regularization,
+                    type3          = object[[j]]$type3,
+                    cluster        = NA)
+        
+        # Store the results
+        out[[j]]$par[i, ] <- model$par
+    }
+  }
   
   # Covariance matrix
-  out$cov  <- cov(out$par)
+  for (i in 1:n_objects)
+  {
+    out[[i]]$cov  <- cov(out[[i]]$par)
+  }
   
   # Return the results
+  if (n_objects == 1)
+  {
+    out <- out[[1]]
+  }
   return(out)
 }
 
@@ -78,11 +138,11 @@ bootstrap_msel <- function(object,
 #' \code{\link[switchSelection]{msel}} function.
 #' @param object an object of class \code{'msel'}.
 #' @param par a vector of parameters which substitutes \code{object$par} and
-#' used to update the estimates i.e., \code{object$coef}, \code{object$cuts} and
-#' others.
+#' is used to update the estimates i.e., \code{object$coef}, \code{object$cuts} 
+#' and others.
 #' @details It may be useful to apply this function to the bootstrap
 #' estimates of \code{\link[switchSelection]{bootstrap_msel}}.
-#' @return This function returns an object \code{object} of class \code{'msel'}
+#' @return This function returns an object of class \code{'msel'}
 #' in which \code{object$par} is substituted with \code{par}. Also, \code{par} 
 #' is used to update the estimates i.e., \code{object$coef}, \code{object$cuts} 
 #' and others.
@@ -106,7 +166,7 @@ bootstrap_combine_msel <- function(...)
   }
   
   # Combine the first set with other sets
-  for (i in length(b))
+  for (i in 2:length(b))
   {
     for (j in names(b[[i]]))
     {

@@ -14,8 +14,8 @@
 \item{vcov}{positively defined numeric matrix representing
 asymptotic variance-covariance matrix of the estimator to be
 used for calculation of standard errors and p-values. It may also be a 
-character. Then \code{\link[switchSelection]{vcov.msel}} function
-will be used which input argument \code{type} will be set to \code{vcov}.
+character. Then the \code{\link[switchSelection]{vcov.msel}} function
+will be used, whose input argument \code{type} will be set to \code{vcov}.
 If \code{estimator = "2step"} then \code{vcov} should be an estimate of the 
 asymptotic covariance matrix of the first step estimator.}
 
@@ -32,7 +32,7 @@ Provides summary for an object of class 'msel'.
 \details{
 If \code{vcov} is \code{NULL} then this function just changes the 
 class of the 'msel' object to 'summary.msel'. Otherwise it 
-additionally changes \code{object$cov} to \code{vcov} and use it to
+additionally changes \code{object$cov} to \code{vcov} and uses it to
 recalculate \code{object$se}, \code{object$p_value} and \code{object$tbl} 
-values. It also adds the value of \code{ind} argument to the object.
+values. It also adds the value of \code{show_ind} argument to the object.
 }

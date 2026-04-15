@@ -14,7 +14,7 @@ using namespace Rcpp;
 //' probit model.
 //' @param par vector of parameters.
 //' @param control_lnL list with some additional parameters.
-//' @param out_type string represeint the output type of the function.
+//' @param out_type string representing the output type of the function.
 //' @param n_sim the number of random draws for multivariate 
 //' normal probabilities.
 //' @param n_cores the number of cores to be used. 
@@ -147,7 +147,9 @@ NumericMatrix lnL_msel(const arma::vec par,
   const arma::umat sigma3_ind_mat              = control_lnL["sigma3_ind_mat"];
   const arma::field<arma::uvec> var2_ind       = control_lnL["var2_ind"];
   const arma::field<arma::umat> cov2_ind       = control_lnL["cov2_ind"];
+  const arma::field<arma::mat> cov2_omit       = control_lnL["cov2_omit"];
   const arma::field<arma::uvec> cuts_ind       = control_lnL["cuts_ind"];
+  
   // Store the coefficients for each equation
   arma::field<arma::vec> coef(n_eq);
   if (is1)
@@ -509,7 +511,7 @@ NumericMatrix lnL_msel(const arma::vec par,
       arma::mat sigma3_transform = transform_mat * sigma3 * transform_mat.t();
       NumericMatrix sigma3_R     = wrap(sigma3_transform);
       
-      // Check that covariance matrix is positive defined
+      // Check that covariance matrix is positive definite
       if(!sigma3.is_sympd())
       {
         if (is_diff)
@@ -589,7 +591,7 @@ NumericMatrix lnL_msel(const arma::vec par,
         // Get some gradients
         arma::mat grad_upper  = prob_list["grad_upper"];
         arma::cube grad_sigma = prob_list["grad_sigma"];
-        // Сoefficients
+        // Coefficients
         // First (n_eq3 - 1) alternatives
         if (alt < (n_eq3 - 1))
         {
@@ -632,7 +634,7 @@ NumericMatrix lnL_msel(const arma::vec par,
             }
           }
         }
-        // Сovariances
+        // Covariances
         int n_sigma3 = sigma3_vec.size();
         for (int i1 = 0; i1 < n_sigma3; i1++)
         {
@@ -683,8 +685,11 @@ NumericMatrix lnL_msel(const arma::vec par,
         sigma.at(n_eq + j1_o, n_eq + j1_o) = par.at(var2_ind(j1_o).at(groups2.at(i, j1_o)));
         for (int j2 = 0; j2 < n_eq; j2++)
         {
-          sigma.at(j1_o + n_eq, j2) = par.at(cov2_ind(j1_o).at(groups2.at(i, j1_o), j2));
-          sigma.at(j2, j1_o + n_eq) = par.at(cov2_ind(j1_o).at(groups2.at(i, j1_o), j2));
+          if (cov2_omit(j1_o).at(groups2.at(i, j1_o), j2) == 0)
+          {
+            sigma.at(j1_o + n_eq, j2) = par.at(cov2_ind(j1_o).at(groups2.at(i, j1_o), j2));
+            sigma.at(j2, j1_o + n_eq) = par.at(cov2_ind(j1_o).at(groups2.at(i, j1_o), j2));
+          }
         }
       }
       if (n_eq2 >= 2)
@@ -979,10 +984,13 @@ NumericMatrix lnL_msel(const arma::vec par,
             for (int j1 = 0; j1 < n_eq_g.at(i); j1++)
             {
               int j1_o                 = ind_eq(i).at(j1);
-              arma::uvec cov2_ind_uvec = {cov2_ind(j_o).at(groups2.at(i, j_o), 
-                                                                      j1_o)};
-              arma::vec tube_tmp       = grad_sigma.tube(n_eq_g(i) + j, j1);
-              jac.submat(ind_g(i), cov2_ind_uvec) = tube_tmp;
+              if (cov2_omit(j_o).at(groups2.at(i, j_o), j1_o) == 0)
+              {
+                arma::uvec cov2_ind_uvec = {cov2_ind(j_o).at(groups2.at(i, j_o), 
+                                                                        j1_o)};
+                arma::vec tube_tmp       = grad_sigma.tube(n_eq_g(i) + j, j1);
+                jac.submat(ind_g(i), cov2_ind_uvec) = tube_tmp;
+              }
             }
           }
           // part related to density

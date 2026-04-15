@@ -17,11 +17,11 @@ data_msel <- function(object, data = NULL)
   formula_var  <- object$other$formula_var
   if (is.null(data))
   {
-    object <- object$data
+    data <- object$data
   }
   n_obs <- nrow(data)
   
-  # Seperate the dataframes for the mean and variance equations
+  # Separate the dataframes for the mean and variance equations
   # of the ordered equations
   df_mean <- NULL
   df_var  <- NULL

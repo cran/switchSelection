@@ -18,7 +18,7 @@ lnL_msel(
 
 \item{control_lnL}{list with some additional parameters.}
 
-\item{out_type}{string represeint the output type of the function.}
+\item{out_type}{string representing the output type of the function.}
 
 \item{n_sim}{the number of random draws for multivariate 
 normal probabilities.}

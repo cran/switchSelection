@@ -12,15 +12,15 @@
 \item{...}{further arguments (currently ignored).}
 
 \item{newdata}{an optional data frame in which to look for variables 
-with which to predict. If omitted, the original data frame used. 
+with which to predict. If omitted, the original data frame is used. 
 This data frame should contain values of dependent variables even if they 
 are not actually needed for prediction (simply assign them with 0 values).}
 }
 \value{
-Returns a numeric matrix. Its columns which names coincide with the
+Returns a numeric matrix. Its columns whose names coincide with the
 names of the ordinal and multinomial equations provide the index of the most 
 probable category for each observation.
-Columns which names coincide with the names of the continuous equations 
+Columns whose names coincide with the names of the continuous equations 
 provide conditional expectations of the dependent variables in observable 
 regimes for each observation.
 }

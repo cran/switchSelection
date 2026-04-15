@@ -5,8 +5,8 @@
 #' @param vcov positively defined numeric matrix representing
 #' asymptotic variance-covariance matrix of the estimator to be
 #' used for calculation of standard errors and p-values. It may also be a 
-#' character. Then \code{\link[switchSelection]{vcov.msel}} function
-#' will be used which input argument \code{type} will be set to \code{vcov}.
+#' character. Then the \code{\link[switchSelection]{vcov.msel}} function
+#' will be used, whose input argument \code{type} will be set to \code{vcov}.
 #' If \code{estimator = "2step"} then \code{vcov} should be an estimate of the 
 #' asymptotic covariance matrix of the first step estimator.
 #' @param show_ind logical; if \code{TRUE} then indexes of parameters will be
@@ -14,9 +14,9 @@
 #' \code{regularization} parameter of \code{\link[switchSelection]{msel}}.
 #' @details If \code{vcov} is \code{NULL} then this function just changes the 
 #' class of the 'msel' object to 'summary.msel'. Otherwise it 
-#' additionally changes \code{object$cov} to \code{vcov} and use it to
+#' additionally changes \code{object$cov} to \code{vcov} and uses it to
 #' recalculate \code{object$se}, \code{object$p_value} and \code{object$tbl} 
-#' values. It also adds the value of \code{ind} argument to the object.
+#' values. It also adds the value of \code{show_ind} argument to the object.
 #' @return Returns an object of class 'summary.msel'.
 summary.msel <- function(object, ..., vcov = NULL, show_ind = FALSE) 
 {
@@ -152,7 +152,7 @@ print.summary.msel <- function(x, ...)
                      has.Pvalue = TRUE, signif.legend = FALSE, P.values = TRUE)
       }
     }
-    if (n_eq >= 2)
+    if ((n_eq >= 2) & (length(x$other$sigma_vec_ind) > 0))
     {
       cat("--- \n")
       cat("Correlations between the ordinal equations: \n")
@@ -258,18 +258,14 @@ print.summary.msel <- function(x, ...)
     {
       for (j in 1:(i - 1))
       {
-        cat("- \n")
-        cat(paste0("Between ", x$formula2[[i]][[2]], 
-                   " and ", x$formula2[[j]][[2]], "\n"))
         if (length(x$other$regimes_pair[[counter]]) > 0)
         {
+          cat("- \n")
+          cat(paste0("Between ", x$formula2[[i]][[2]], 
+                     " and ", x$formula2[[j]][[2]], "\n"))
           printCoefmat(remove_column(tbl_sigma2[[counter]], "ind", !show_ind),
                        has.Pvalue = TRUE, signif.legend = FALSE, 
                        P.values = TRUE)
-        }
-        else
-        {
-          cat("Unidentified\n")
         }
         counter <- counter + 1
       }
@@ -310,10 +306,10 @@ print.msel <- function(x, ...)
 #' Structure of the Object of Class msel
 #' @description Prints information on the structure of the model.
 #' @param x object of class 'msel'
-#' @return The function returns a numeric matrix which columns are 
-#' \code{groups}, \code{groups2}, \code{groups3} correspondingly. It also has
-#' additional (last) column with the number of observations associated with the
-#' corresponding combinations of the groups.
+#' @return The function returns a numeric matrix whose columns are 
+#' \code{groups}, \code{groups2}, and \code{groups3}, respectively. 
+#' It also has additional (last) column with the number of observations 
+#' associated with the corresponding combinations of the groups.
 struct_msel <- function(x)
 {
   # Prepare the variable to store the output
@@ -357,8 +353,8 @@ print.struct_msel <- function(x, ...)
     warning("Additional arguments passed through ... are ignored.")   
   }
   
-  cat(paste0("Structure of the model i.e. correspondence between the possible ",
-             "values\n",
+  cat(paste0("Structure of the model i.e., correspondence between the ",
+             "possible values\n",
              "of the ordinal equations and the regimes of the ",
              "continuous equations: \n"))
   cat("--- \n")

@@ -5,7 +5,7 @@
 \alias{cps}
 \title{A subset of data from Current Population Survey (CPS).}
 \format{
-A data frame with 18,253 rows and 23 columns. It contains information on
+A data frame with 18,253 rows and 25 columns. It contains information on
 wages and some socio-demographic characteristics of the middle age
 (25-54 years) married women:
 \describe{
@@ -20,8 +20,8 @@ wages and some socio-demographic characteristics of the middle age
   (1 - poor, 2 - fair, 3 - good, 4 - very good, 5 - excellent).}
   \item{shealth}{the same as health but for a spouse.}
   \item{basic}{a binary variable which equals 1 for those who have graduated 
-  from high school or has at least some college or has associated degree and 
-  does not have any higher level of education, 0 - otherwise.}
+  from high school or has at least some college or has an associated degree 
+  and does not have any higher level of education, 0 - otherwise.}
   \item{bachelor}{a binary variable which equals 1 for those whose highest 
   education level is a bachelor degree.}
   \item{master}{a binary variable which equals 1 for those whose highest 
@@ -34,7 +34,7 @@ wages and some socio-demographic characteristics of the middle age
   educ = 1 if bachelor = 1 and 
   educ = 2 if master = 1.}
   \item{seduc}{the same as educ but for a spouse.}
-  \item{weeks}{a total number of weeks worked durning the year.}
+  \item{weeks}{a total number of weeks worked during the year.}
   \item{sweeks}{the same as weeks but for a spouse.}
   \item{hours}{a usual number of working hours per week.}
   \item{shours}{the same as hours but for a spouse.}

@@ -29,10 +29,10 @@ multinomial equation.}
 \item{regime}{an integer representing a regime of the continuous equation.}
 
 \item{type}{a character representing a type of the output. Possible options
-are \code{"coef"}, \code{"coef2"}, \code{coef_lambda}, 
+are \code{"coef"}, \code{"coef2"}, \code{"coef_lambda"}, 
 \code{"coef_var"}, \code{"coef3"}, \code{"cuts"}, \code{"cov"}, 
-\code{"cov1"}, \code{"var"}, \code{"cov2"}, \code{"cov3"}, 
-and \code{marginal}.
+\code{"cov1"}, \code{"cov12"}, \code{"var"}, \code{"cov2"}, \code{"cov3"}, 
+and \code{"marginal"}.
 See 'Details' for additional information.}
 }
 \value{
@@ -88,8 +88,8 @@ estimates of the \eqn{c_{j}} cuts (thresholds) are returned for each
 
 \strong{Covariances between the random errors of the ordinal equations}
 
-Suppose that \code{type = "cov1"}. Then estimate of the covariance matrix of
-\eqn{u_{i}} is returned. If \code{eq = c(a, b)} then the function returns
+Suppose that \code{type = "cov1"}. Then the estimate of the covariance matrix 
+of \eqn{u_{i}} is returned. If \code{eq = c(a, b)} then the function returns
 \eqn{(a, b)}-th element of this matrix i.e. an element from the
 \code{a}-th row and the \code{b}-th column which represents an estimate of
 \eqn{Cov(u_{ai}, u_{bi})}.
@@ -98,7 +98,7 @@ Suppose that \code{type = "cov1"}. Then estimate of the covariance matrix of
 equations}
 
 Suppose that \code{type = "cov12"}. Then estimates of the covariances between
-random errors of the ordinal \eqn{u_{i}} and cotninuous \eqn{\varepsilon_{i}} 
+random errors of the ordinal \eqn{u_{i}} and continuous \eqn{\varepsilon_{i}} 
 equations are returned. If \code{eq2 = k} then covariances with random errors 
 of the \code{k}-th continuous equation are returned. If in addition 
 \code{eq = j} and \code{regime = r} then the function returns an estimate of 
@@ -110,7 +110,7 @@ If \code{eq2 = NULL} it is assumed that \code{eq2 = 1}.
 Suppose that \code{type = "var"}. Then estimates of the variances of 
 \eqn{\varepsilon_{i}} are returned. If \code{eq2 = k} then estimates only for
 the \eqn{k}-th continuous equation are returned. If in addition 
-\code{regime = r} then estimate of the \eqn{Var(\varepsilon_{ri})} is 
+\code{regime = r} then the estimate of the \eqn{Var(\varepsilon_{ri})} is 
 returned. Herewith if \code{regime} is not \code{NULL} and \code{eq2} is 
 \code{NULL} it is assumed that \code{eq2 = 1}.
 
@@ -118,11 +118,11 @@ returned. Herewith if \code{regime} is not \code{NULL} and \code{eq2} is
 
 Suppose that \code{type = "cov2"}. Then estimates of the covariances between
 random errors of different continuous equations in different regimes are 
-returned. If \code{eq2 = c(a, b)} and \code{regime = c(c, d)} then function 
-returns an estimate of the covariance of random errors of the \code{a}-th 
-and \code{b}-th continuous equations in the regimes \code{c} and \code{d} 
-correspondingly. If this covariance is not identifiable then \code{NA} value 
-is returned.
+returned. If \code{eq2 = c(a, b)} and \code{regime = c(c, d)} then the 
+function returns an estimate of the covariance of random errors of the 
+\code{a}-th and \code{b}-th continuous equations in the regimes 
+\code{c} and \code{d} correspondingly. If this covariance is not 
+identifiable then an \code{NA} value is returned.
 
 \strong{Coefficients of the multinomial equation}
 
@@ -133,21 +133,22 @@ the \eqn{\tilde{\gamma}_{j}} coefficients are returned.
 
 \strong{Covariances between the random errors of the multinomial equations}
 
-Suppose that \code{type = "cov3"}. Then estimate of the covariance matrix of
-\eqn{\tilde{u}_{i}} is returned. If \code{eq3 = c(a, b)} then the function 
+Suppose that \code{type = "cov3"}. Then the estimate of the covariance matrix 
+of \eqn{\tilde{u}_{i}} is returned. If \code{eq3 = c(a, b)} then the function 
 returns \eqn{(a, b)}-th element of this matrix i.e. an element from the
 \code{a}-th row and the \code{b}-th column which represents an estimate of
 \eqn{Cov(\tilde{u}_{(a+1)i}, \tilde{u}_{(b+1)i})}.
 
 \strong{Parameters of the marginal distributions}
 
-Suppose that \code{type = "marginal"}. Then a list is returned which
+Suppose that \code{type = "marginal"}. Then a list is returned whose
 \code{j}-th element is a numeric vector of estimates of the parameters
 of the marginal distribution of \eqn{u_{ji}}.
 
 \strong{Asymptotic covariance matrix}
 
-Suppose that \code{type = "cov"}. Then estimate of the asymptotic covariance
-matrix of the estimator is returned. Note that this estimate depends
-on the \code{cov_type} argument of \code{\link[switchSelection]{msel}}.
+Suppose that \code{type = "cov"}. Then the estimate of the asymptotic 
+covariance matrix of the estimator is returned. Note that this estimate 
+depends on the \code{cov_type} argument of the 
+\code{\link[switchSelection]{msel}} function.
 }
